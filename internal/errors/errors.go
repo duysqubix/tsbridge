@@ -318,28 +318,15 @@ func NewServiceStartupError(total, successful, failed int, failures map[string]e
 
 // AsServiceStartupError checks if an error is a ServiceStartupError and returns it
 func AsServiceStartupError(err error) (*ServiceStartupError, bool) {
-	if err == nil {
-		return nil, false
-	}
-
-	// First unwrap the Error wrapper if present
-	var e *Error
-	if errors.As(err, &e) && e.Err != nil {
-		err = e.Err
-	}
-
 	var startupErr *ServiceStartupError
-	if errors.As(err, &startupErr) {
-		return startupErr, true
-	}
-	return nil, false
+	ok := errors.As(err, &startupErr)
+	return startupErr, ok
 }
 
 // ProviderError represents an error from a configuration provider.
 // It includes the provider name for context in error messages.
 type ProviderError struct {
 	Provider string
-	Type     ErrorType
 	Message  string
 	Cause    error
 }
@@ -363,7 +350,6 @@ func NewProviderError(provider string, errType ErrorType, message string) error 
 		Type: errType,
 		Err: &ProviderError{
 			Provider: provider,
-			Type:     errType,
 			Message:  message,
 		},
 	}
@@ -378,7 +364,6 @@ func WrapProviderError(err error, provider string, errType ErrorType, operation 
 		Type: errType,
 		Err: &ProviderError{
 			Provider: provider,
-			Type:     errType,
 			Message:  operation,
 			Cause:    err,
 		},
