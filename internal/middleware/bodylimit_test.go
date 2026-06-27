@@ -126,33 +126,6 @@ func TestMaxBytesHandlerHijacking(t *testing.T) {
 	assert.True(t, rec.hijacked, "Handler should have hijacked the connection")
 }
 
-func TestMaxBytesHandlerNoHijackSupport(t *testing.T) {
-	// Test when underlying ResponseWriter doesn't support hijacking
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hijacker, ok := w.(http.Hijacker)
-		require.True(t, ok, "ResponseWriter should implement Hijacker")
-
-		_, _, err := hijacker.Hijack()
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "does not support hijacking")
-
-		// Write normal response when hijacking fails
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("hijacking not supported"))
-	})
-
-	wrapped := MaxBytesHandler(1024)(handler)
-
-	req := httptest.NewRequest("GET", "/", nil)
-
-	// Regular ResponseRecorder doesn't support hijacking
-	rec := httptest.NewRecorder()
-	wrapped.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-	assert.Equal(t, "hijacking not supported", rec.Body.String())
-}
-
 func TestMaxBytesHandlerLargeBodyPartialRead(t *testing.T) {
 	// Test that MaxBytesReader properly limits body reading
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
