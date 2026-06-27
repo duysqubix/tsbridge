@@ -30,9 +30,6 @@ type TSNetServer interface {
 	// Close shuts down the server.
 	Close() error
 
-	// Start initializes the server connection to Tailscale.
-	Start() error
-
 	// Up connects the server to the tailnet with context support for timeout/cancellation.
 	// It returns the server status on success or an error (including context.DeadlineExceeded on timeout).
 	Up(ctx context.Context) (*ipnstate.Status, error)
@@ -167,34 +164,6 @@ func (s *RealTSNetServer) Close() error {
 	return s.Server.Close()
 }
 
-// Start implements TSNetServer.
-func (s *RealTSNetServer) Start() error {
-	start := time.Now()
-	slog.Debug("tsnet server Start() called",
-		"hostname", s.Hostname,
-		"ephemeral", s.Ephemeral,
-		"dir", s.Dir,
-		"has_auth_key", s.AuthKey != "",
-	)
-
-	err := s.Server.Start()
-
-	if err != nil {
-		slog.Debug("tsnet server Start() failed",
-			"hostname", s.Hostname,
-			"duration", time.Since(start),
-			"error", err,
-		)
-	} else {
-		slog.Debug("tsnet server Start() succeeded",
-			"hostname", s.Hostname,
-			"duration", time.Since(start),
-		)
-	}
-
-	return err
-}
-
 // Up implements TSNetServer with context support for timeout/cancellation.
 func (s *RealTSNetServer) Up(ctx context.Context) (*ipnstate.Status, error) {
 	start := time.Now()
@@ -284,7 +253,6 @@ type MockTSNetServer struct {
 	ListenTLSFunc    func(network, addr string) (net.Listener, error)
 	ListenFunnelFunc func(network, addr string) (net.Listener, error)
 	CloseFunc        func() error
-	StartFunc        func() error
 	UpFunc           func(ctx context.Context) (*ipnstate.Status, error)
 	LocalClientFunc  func() (LocalClient, error)
 }
@@ -305,9 +273,6 @@ func NewMockTSNetServer() *MockTSNetServer {
 			return &mockListener{addr: addr}, nil
 		},
 		CloseFunc: func() error {
-			return nil
-		},
-		StartFunc: func() error {
 			return nil
 		},
 		UpFunc: func(ctx context.Context) (*ipnstate.Status, error) {
@@ -370,11 +335,6 @@ func (m *MockTSNetServer) ListenFunnel(network, addr string) (net.Listener, erro
 // Close implements TSNetServer.
 func (m *MockTSNetServer) Close() error {
 	return m.CloseFunc()
-}
-
-// Start implements TSNetServer.
-func (m *MockTSNetServer) Start() error {
-	return m.StartFunc()
 }
 
 // Up implements TSNetServer.

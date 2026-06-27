@@ -179,9 +179,6 @@ func TestListen(t *testing.T) {
 
 			// Create mock TSNet server
 			mockServer := tsnet.NewMockTSNetServer()
-			mockServer.StartFunc = func() error {
-				return nil
-			}
 
 			// Track which Listen method was called
 			var listenCalled, listenTLSCalled, listenFunnelCalled bool
@@ -343,9 +340,6 @@ func TestListen_EphemeralServices(t *testing.T) {
 
 			// Create mock TSNet server
 			mockServer := tsnet.NewMockTSNetServer()
-			mockServer.StartFunc = func() error {
-				return nil
-			}
 			mockServer.ListenTLSFunc = func(network, addr string) (net.Listener, error) {
 				return &mockListener{addr: addr}, nil
 			}
@@ -845,7 +839,6 @@ func TestStateDirResolution(t *testing.T) {
 
 			// Create mock TSNet server
 			mockServer := tsnet.NewMockTSNetServer()
-			mockServer.StartFunc = func() error { return nil }
 			mockServer.ListenTLSFunc = func(network, addr string) (net.Listener, error) {
 				return &mockListener{addr: addr}, nil
 			}
@@ -1373,9 +1366,6 @@ func TestPrimeCertificateErrorCases(t *testing.T) {
 func TestAsyncCertificatePriming(t *testing.T) {
 	// Create a mock TSNet server that will simulate slow priming
 	mockServer := tsnet.NewMockTSNetServer()
-	mockServer.StartFunc = func() error {
-		return nil
-	}
 
 	mockServer.ListenTLSFunc = func(network, addr string) (net.Listener, error) {
 		return &mockListener{addr: addr}, nil
@@ -1570,13 +1560,6 @@ func (m *mockTSNetServerWithControlURL) SetControlURL(url string) {
 	}
 }
 
-func (m *mockTSNetServerWithControlURL) Start() error {
-	if m.StartFunc != nil {
-		return m.StartFunc()
-	}
-	return nil
-}
-
 func (m *mockTSNetServerWithControlURL) Listen(network, addr string) (net.Listener, error) {
 	if m.ListenFunc != nil {
 		return m.ListenFunc(network, addr)
@@ -1620,9 +1603,6 @@ func TestListenWithPrimeCertificate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock TSNet server
 			mockServer := tsnet.NewMockTSNetServer()
-			mockServer.StartFunc = func() error {
-				return nil
-			}
 
 			// Setup listeners
 			mockServer.ListenFunc = func(network, addr string) (net.Listener, error) {
@@ -1938,9 +1918,6 @@ func TestListen_CleansUpServerOnTLSListenerFailure(t *testing.T) {
 	closeCalled := false
 
 	mockServer := tsnet.NewMockTSNetServer()
-	mockServer.StartFunc = func() error {
-		return nil
-	}
 	mockServer.ListenTLSFunc = func(network, addr string) (net.Listener, error) {
 		return nil, errors.New("simulated TLS listener failure")
 	}
@@ -1979,9 +1956,6 @@ func TestListen_CleansUpServerOnFunnelListenerFailure(t *testing.T) {
 	closeCalled := false
 
 	mockServer := tsnet.NewMockTSNetServer()
-	mockServer.StartFunc = func() error {
-		return nil
-	}
 	mockServer.ListenFunnelFunc = func(network, addr string) (net.Listener, error) {
 		return nil, errors.New("simulated funnel listener failure")
 	}
