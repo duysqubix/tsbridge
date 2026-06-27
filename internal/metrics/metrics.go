@@ -26,8 +26,6 @@ type Collector struct {
 	// Enhanced metrics
 	ConnectionCount      *prometheus.GaugeVec
 	WhoisDuration        *prometheus.HistogramVec
-	OAuthRefreshTotal    *prometheus.CounterVec
-	BackendHealth        *prometheus.GaugeVec
 	ConnectionPoolActive *prometheus.GaugeVec
 
 	// Service lifecycle metrics
@@ -75,20 +73,6 @@ func NewCollector() *Collector {
 				Name:    "tsbridge_whois_duration_seconds",
 				Help:    "Whois lookup duration in seconds",
 				Buckets: prometheus.DefBuckets,
-			},
-			[]string{"service"},
-		),
-		OAuthRefreshTotal: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "tsbridge_oauth_refresh_total",
-				Help: "Total number of OAuth token refreshes",
-			},
-			[]string{"status"},
-		),
-		BackendHealth: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: "tsbridge_backend_health",
-				Help: "Backend health status (1 = healthy, 0 = unhealthy)",
 			},
 			[]string{"service"},
 		),
@@ -145,8 +129,6 @@ func (c *Collector) Register(reg prometheus.Registerer) error {
 		c.ErrorsTotal,
 		c.ConnectionCount,
 		c.WhoisDuration,
-		c.OAuthRefreshTotal,
-		c.BackendHealth,
 		c.ConnectionPoolActive,
 		c.ServiceOperations,
 		c.ServiceOpDuration,
@@ -174,13 +156,17 @@ func (c *Collector) RecordWhoisDuration(service string, duration time.Duration) 
 	c.WhoisDuration.WithLabelValues(service).Observe(duration.Seconds())
 }
 
-// SetBackendHealth sets the health status of a backend
-func (c *Collector) SetBackendHealth(service string, healthy bool) {
-	value := 0.0
-	if healthy {
-		value = 1.0
+// ConnStateHook returns an http.Server.ConnState callback that tracks the
+// number of active connections for a service via the ConnectionCount gauge.
+func (c *Collector) ConnStateHook(service string) func(net.Conn, http.ConnState) {
+	return func(_ net.Conn, state http.ConnState) {
+		switch state {
+		case http.StateNew:
+			c.ConnectionCount.WithLabelValues(service).Inc()
+		case http.StateClosed, http.StateHijacked:
+			c.ConnectionCount.WithLabelValues(service).Dec()
+		}
 	}
-	c.BackendHealth.WithLabelValues(service).Set(value)
 }
 
 // UpdateConnectionPoolMetrics updates connection pool metrics for a service

@@ -5,7 +5,10 @@ import (
 	"net/netip"
 	"testing"
 
+	"github.com/jtdowney/tsbridge/internal/metrics"
 	"github.com/jtdowney/tsbridge/internal/tsnet"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"tailscale.com/client/tailscale/apitype"
 	"tailscale.com/tailcfg"
 )
@@ -39,7 +42,7 @@ func TestWhoisClientAdapter_PreservesFullResponse(t *testing.T) {
 		}, nil
 	}
 
-	adapter := NewWhoisClientAdapter(mockServer)
+	adapter := NewWhoisClientAdapter(mockServer, nil, "")
 	resp, err := adapter.WhoIs(context.Background(), "100.64.0.1:12345")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -75,4 +78,31 @@ func TestWhoisClientAdapter_PreservesFullResponse(t *testing.T) {
 
 	// These fields are now properly preserved for the middleware to use
 	// in X-Tailscale-Name and X-Tailscale-Addresses headers
+}
+
+// TestWhoisClientAdapter_RecordsDuration verifies the adapter records a sample
+// to the WhoisDuration histogram for each lookup.
+func TestWhoisClientAdapter_RecordsDuration(t *testing.T) {
+	mockServer := tsnet.NewMockTSNetServer()
+	mockServer.LocalClientFunc = func() (tsnet.LocalClient, error) {
+		return &tsnet.MockLocalClient{
+			WhoIsFunc: func(ctx context.Context, remoteAddr string) (*apitype.WhoIsResponse, error) {
+				return &apitype.WhoIsResponse{}, nil
+			},
+		}, nil
+	}
+
+	collector := metrics.NewCollector()
+	adapter := NewWhoisClientAdapter(mockServer, collector, "test-service")
+	if _, err := adapter.WhoIs(context.Background(), "100.64.0.1:12345"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	metric := &dto.Metric{}
+	if err := collector.WhoisDuration.WithLabelValues("test-service").(prometheus.Histogram).Write(metric); err != nil {
+		t.Fatalf("writing histogram metric: %v", err)
+	}
+	if got := metric.GetHistogram().GetSampleCount(); got != 1 {
+		t.Errorf("sample count = %d, want 1", got)
+	}
 }

@@ -97,15 +97,6 @@ rate(tsbridge_errors_total[5m])
 histogram_quantile(0.99, rate(tsbridge_whois_duration_seconds_bucket[5m]))
 ```
 
-### Backend Health
-
-#### tsbridge_backend_health
-
-- **Type**: Gauge
-- **Labels**: `service`
-- **Description**: Backend health status (1 = healthy, 0 = unhealthy)
-- **Note**: Currently not actively updated (reserved for health checks)
-
 ### Service Lifecycle
 
 #### tsbridge_services_active
@@ -147,15 +138,6 @@ rate(tsbridge_service_operations_total{status="failure"}[5m])
 
 - **Type**: Histogram
 - **Description**: Time taken to reload configuration
-
-### OAuth Metrics
-
-#### tsbridge_oauth_refresh_total
-
-- **Type**: Counter
-- **Labels**: `status` (success/failure)
-- **Description**: OAuth token refresh operations
-- **Note**: Reserved for future OAuth token refresh tracking
 
 ## Example Queries
 

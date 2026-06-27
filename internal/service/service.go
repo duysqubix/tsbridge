@@ -243,6 +243,11 @@ func (r *Registry) startService(svcCfg config.Service) (*Service, error) {
 		"idle_timeout", svc.server.IdleTimeout,
 	)
 
+	// Track active connections per service when metrics are enabled
+	if svc.metricsCollector != nil {
+		svc.server.ConnState = svc.metricsCollector.ConnStateHook(svcCfg.Name)
+	}
+
 	// Start serving in background
 	go func() {
 		slog.Debug("service listening", "service", svcCfg.Name, "address", listener.Addr())
@@ -344,7 +349,7 @@ func (s *Service) CreateHandler() (http.Handler, error) {
 				whoisTimeout = constants.DefaultWhoisTimeout
 			}
 			// Create a whois client adapter for the tsnet server
-			whoisClient := tailscale.NewWhoisClientAdapter(serviceServer)
+			whoisClient := tailscale.NewWhoisClientAdapter(serviceServer, s.metricsCollector, s.Config.Name)
 			// Use the whois middleware with internalized cache
 			httpHandler = middleware.Whois(whoisClient, whoisEnabled, whoisTimeout, constants.DefaultWhoisCacheSize, constants.DefaultWhoisCacheTTL)(httpHandler)
 		}

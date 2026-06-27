@@ -346,30 +346,6 @@ func TestEnhancedMetrics(t *testing.T) {
 		assert.Greater(t, metric.Histogram.GetSampleCount(), uint64(0))
 	})
 
-	t.Run("OAuthRefreshCounter", func(t *testing.T) {
-		collector := NewCollector()
-		require.NotNil(t, collector.OAuthRefreshTotal)
-
-		// Test counting OAuth refreshes
-		collector.OAuthRefreshTotal.WithLabelValues("success").Inc()
-		assert.Equal(t, float64(1), promtestutil.ToFloat64(collector.OAuthRefreshTotal.WithLabelValues("success")))
-
-		collector.OAuthRefreshTotal.WithLabelValues("failure").Inc()
-		assert.Equal(t, float64(1), promtestutil.ToFloat64(collector.OAuthRefreshTotal.WithLabelValues("failure")))
-	})
-
-	t.Run("BackendHealthGauge", func(t *testing.T) {
-		collector := NewCollector()
-		require.NotNil(t, collector.BackendHealth)
-
-		// Test setting backend health status
-		collector.SetBackendHealth("test-service", true)
-		assert.Equal(t, float64(1), promtestutil.ToFloat64(collector.BackendHealth.WithLabelValues("test-service")))
-
-		collector.SetBackendHealth("test-service", false)
-		assert.Equal(t, float64(0), promtestutil.ToFloat64(collector.BackendHealth.WithLabelValues("test-service")))
-	})
-
 	t.Run("ConnectionPoolMetrics", func(t *testing.T) {
 		collector := NewCollector()
 		require.NotNil(t, collector.ConnectionPoolActive)
@@ -405,28 +381,28 @@ func TestRecordWhoisDuration(t *testing.T) {
 	assert.InDelta(t, 0.1, metric.GetHistogram().GetSampleSum(), 0.001)
 }
 
-func TestSetBackendHealth(t *testing.T) {
+func TestConnStateHook(t *testing.T) {
 	collector := NewCollector()
+	hook := collector.ConnStateHook("test-service")
+	gauge := collector.ConnectionCount.WithLabelValues("test-service")
 
-	tests := []struct {
-		name     string
-		service  string
-		healthy  bool
-		expected float64
-	}{
-		{"healthy backend", "service1", true, 1},
-		{"unhealthy backend", "service2", false, 0},
-		{"toggle health", "service3", true, 1},
-		{"toggle health back", "service3", false, 0},
-	}
+	hook(nil, http.StateNew)
+	hook(nil, http.StateNew)
+	assert.Equal(t, float64(2), promtestutil.ToFloat64(gauge))
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			collector.SetBackendHealth(tt.service, tt.healthy)
-			assert.Equal(t, tt.expected, promtestutil.ToFloat64(collector.BackendHealth.WithLabelValues(tt.service)))
-		})
-	}
+	hook(nil, http.StateClosed)
+	assert.Equal(t, float64(1), promtestutil.ToFloat64(gauge))
 
+	hook(nil, http.StateHijacked)
+	assert.Equal(t, float64(0), promtestutil.ToFloat64(gauge))
+
+	// Active/Idle transitions must not change the active-connection count.
+	hook(nil, http.StateActive)
+	hook(nil, http.StateIdle)
+	assert.Equal(t, float64(0), promtestutil.ToFloat64(gauge))
+}
+
+func TestMetricsServer(t *testing.T) {
 	t.Run("server startup failure returns startup error", func(t *testing.T) {
 		server1 := NewServer("invalid:address:format", prometheus.NewRegistry(), 5*time.Second) // Invalid address
 		err := server1.Start(context.Background())
