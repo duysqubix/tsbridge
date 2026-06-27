@@ -638,17 +638,6 @@ func (c *Config) Validate(provider string) error {
 	return nil
 }
 
-// validateOAuthSources validates OAuth authentication configuration
-func validateOAuthSources(ts Tailscale) error {
-	if ts.OAuthClientID == "" {
-		return errors.NewValidationError("OAuth client ID must be provided")
-	}
-	if ts.OAuthClientSecret.Value() == "" {
-		return errors.NewValidationError("OAuth client secret must be provided")
-	}
-	return nil
-}
-
 // validateAuthMethodSelection ensures only one auth method is configured
 func validateAuthMethodSelection(ts Tailscale) error {
 	hasAuthKey := ts.AuthKey.Value() != ""

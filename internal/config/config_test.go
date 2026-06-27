@@ -718,62 +718,6 @@ tls_mode = "` + tt.tlsMode + `"
 	}
 }
 
-func TestValidateOAuthSources(t *testing.T) {
-	tests := []struct {
-		name      string
-		tailscale Tailscale
-		wantErr   bool
-		errMsg    string
-	}{
-		{
-			name: "valid OAuth credentials",
-			tailscale: Tailscale{
-				OAuthClientID:     "test-id",
-				OAuthClientSecret: "test-secret",
-			},
-			wantErr: false,
-		},
-		{
-			name: "missing OAuth client ID",
-			tailscale: Tailscale{
-				OAuthClientID:     "",
-				OAuthClientSecret: "test-secret",
-			},
-			wantErr: true,
-			errMsg:  "OAuth client ID must be provided",
-		},
-		{
-			name: "missing OAuth client secret",
-			tailscale: Tailscale{
-				OAuthClientID:     "test-id",
-				OAuthClientSecret: "",
-			},
-			wantErr: true,
-			errMsg:  "OAuth client secret must be provided",
-		},
-		{
-			name: "OAuth valid",
-			tailscale: Tailscale{
-				OAuthClientID:     "test-id",
-				OAuthClientSecret: "test-secret",
-			},
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := validateOAuthSources(tt.tailscale)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("validateOAuthSources() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if err != nil && tt.errMsg != "" && !strings.Contains(err.Error(), tt.errMsg) {
-				t.Errorf("validateOAuthSources() error = %v, want error containing %v", err, tt.errMsg)
-			}
-		})
-	}
-}
-
 func TestValidateAuthMethodSelection(t *testing.T) {
 	tests := []struct {
 		name      string
