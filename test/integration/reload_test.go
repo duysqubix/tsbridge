@@ -3,7 +3,6 @@
 package integration
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -71,8 +70,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		require.NoError(t, err)
 
 		// Start the app
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+		ctx := t.Context()
 
 		go func() {
 			_ = testApp.Start(ctx)
@@ -116,8 +114,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		require.NoError(t, err)
 
 		// Start the app
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+		ctx := t.Context()
 
 		go func() {
 			_ = testApp.Start(ctx)
@@ -154,8 +151,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		require.NoError(t, err)
 
 		// Start the app
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+		ctx := t.Context()
 
 		go func() {
 			_ = testApp.Start(ctx)
@@ -191,8 +187,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		require.NoError(t, err)
 
 		// Start the app
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+		ctx := t.Context()
 
 		go func() {
 			_ = testApp.Start(ctx)
@@ -227,8 +222,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		require.NoError(t, err)
 
 		// Start the app
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+		ctx := t.Context()
 
 		go func() {
 			_ = testApp.Start(ctx)
@@ -239,7 +233,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 
 		// Create multiple different configs
 		configs := make([]*config.Config, 5)
-		for i := 0; i < 5; i++ {
+		for i := range 5 {
 			backend := helpers.CreateTestBackend(t)
 			configs[i] = helpers.CreateTestConfig(t, "svc1", stripScheme(backend.URL))
 			configs[i].Services[0].Tags = []string{string(rune('a' + i))} // Different tags to force updates
@@ -254,7 +248,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		}
 
 		// Collect results
-		for i := 0; i < len(configs); i++ {
+		for range configs {
 			<-errCh // Just drain the channel, some may fail due to concurrency
 		}
 

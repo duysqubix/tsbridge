@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jtdowney/tsbridge/internal/testhelpers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -263,12 +262,12 @@ func TestServiceConfigEqual(t *testing.T) {
 			a: Service{
 				Name:                  "test-service",
 				BackendAddr:           "http://localhost:8080",
-				ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
+				ResponseHeaderTimeout: new(30 * time.Second),
 			},
 			b: Service{
 				Name:                  "test-service",
 				BackendAddr:           "http://localhost:8080",
-				ResponseHeaderTimeout: testhelpers.DurationPtr(60 * time.Second),
+				ResponseHeaderTimeout: new(60 * time.Second),
 			},
 			expected: false,
 		},
@@ -361,12 +360,12 @@ func TestServiceConfigEqual(t *testing.T) {
 			a: Service{
 				Name:          "test-service",
 				BackendAddr:   "http://localhost:8080",
-				FlushInterval: testhelpers.DurationPtr(1 * time.Second),
+				FlushInterval: new(1 * time.Second),
 			},
 			b: Service{
 				Name:          "test-service",
 				BackendAddr:   "http://localhost:8080",
-				FlushInterval: testhelpers.DurationPtr(2 * time.Second),
+				FlushInterval: new(2 * time.Second),
 			},
 			expected: false,
 		},
@@ -375,12 +374,12 @@ func TestServiceConfigEqual(t *testing.T) {
 			a: Service{
 				Name:              "test-service",
 				BackendAddr:       "http://localhost:8080",
-				ReadHeaderTimeout: testhelpers.DurationPtr(10 * time.Second),
+				ReadHeaderTimeout: new(10 * time.Second),
 			},
 			b: Service{
 				Name:              "test-service",
 				BackendAddr:       "http://localhost:8080",
-				ReadHeaderTimeout: testhelpers.DurationPtr(20 * time.Second),
+				ReadHeaderTimeout: new(20 * time.Second),
 			},
 			expected: false,
 		},
@@ -389,12 +388,12 @@ func TestServiceConfigEqual(t *testing.T) {
 			a: Service{
 				Name:         "test-service",
 				BackendAddr:  "http://localhost:8080",
-				WriteTimeout: testhelpers.DurationPtr(30 * time.Second),
+				WriteTimeout: new(30 * time.Second),
 			},
 			b: Service{
 				Name:         "test-service",
 				BackendAddr:  "http://localhost:8080",
-				WriteTimeout: testhelpers.DurationPtr(60 * time.Second),
+				WriteTimeout: new(60 * time.Second),
 			},
 			expected: false,
 		},
@@ -403,12 +402,12 @@ func TestServiceConfigEqual(t *testing.T) {
 			a: Service{
 				Name:        "test-service",
 				BackendAddr: "http://localhost:8080",
-				IdleTimeout: testhelpers.DurationPtr(120 * time.Second),
+				IdleTimeout: new(120 * time.Second),
 			},
 			b: Service{
 				Name:        "test-service",
 				BackendAddr: "http://localhost:8080",
-				IdleTimeout: testhelpers.DurationPtr(240 * time.Second),
+				IdleTimeout: new(240 * time.Second),
 			},
 			expected: false,
 		},
@@ -417,12 +416,12 @@ func TestServiceConfigEqual(t *testing.T) {
 			a: Service{
 				Name:         "test-service",
 				BackendAddr:  "http://localhost:8080",
-				WhoisTimeout: testhelpers.DurationPtr(5 * time.Second),
+				WhoisTimeout: new(5 * time.Second),
 			},
 			b: Service{
 				Name:         "test-service",
 				BackendAddr:  "http://localhost:8080",
-				WhoisTimeout: testhelpers.DurationPtr(10 * time.Second),
+				WhoisTimeout: new(10 * time.Second),
 			},
 			expected: false,
 		},
@@ -472,7 +471,6 @@ func TestServiceConfigEqualCoversAllFields(t *testing.T) {
 
 	// Check that all struct fields are in our comparison
 	for field := range serviceType.Fields() {
-		field := field
 		if !comparedFields[field.Name] {
 			t.Errorf("Field %s is not compared in ServiceConfigEqual", field.Name)
 		}
@@ -482,7 +480,6 @@ func TestServiceConfigEqualCoversAllFields(t *testing.T) {
 	// that don't actually exist in the struct
 	actualFields := make(map[string]bool)
 	for field := range serviceType.Fields() {
-		field := field
 		actualFields[field.Name] = true
 	}
 
@@ -507,18 +504,18 @@ func TestServiceConfigEqualWithGoCmp(t *testing.T) {
 				Name:                  "service-a",
 				BackendAddr:           "http://localhost:8080",
 				WhoisEnabled:          new(true),
-				WhoisTimeout:          testhelpers.DurationPtr(5 * time.Second),
+				WhoisTimeout:          new(5 * time.Second),
 				TLSMode:               "strict",
 				Tags:                  []string{"prod", "api"},
-				ReadHeaderTimeout:     testhelpers.DurationPtr(10 * time.Second),
-				WriteTimeout:          testhelpers.DurationPtr(30 * time.Second),
-				IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-				ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
+				ReadHeaderTimeout:     new(10 * time.Second),
+				WriteTimeout:          new(30 * time.Second),
+				IdleTimeout:           new(120 * time.Second),
+				ResponseHeaderTimeout: new(30 * time.Second),
 				AccessLog:             new(true),
-				MaxRequestBodySize:    testhelpers.Int64Ptr(1048576),
+				MaxRequestBodySize:    new(int64(1048576)),
 				FunnelEnabled:         new(false),
 				Ephemeral:             true,
-				FlushInterval:         testhelpers.DurationPtr(1 * time.Second),
+				FlushInterval:         new(1 * time.Second),
 				UpstreamHeaders: map[string]string{
 					"X-Custom-Header": "value1",
 					"X-Request-ID":    "123",
@@ -533,18 +530,18 @@ func TestServiceConfigEqualWithGoCmp(t *testing.T) {
 				Name:                  "service-b",
 				BackendAddr:           "http://localhost:8081",
 				WhoisEnabled:          new(false),
-				WhoisTimeout:          testhelpers.DurationPtr(10 * time.Second),
+				WhoisTimeout:          new(10 * time.Second),
 				TLSMode:               "off",
 				Tags:                  []string{"dev", "internal"},
-				ReadHeaderTimeout:     testhelpers.DurationPtr(20 * time.Second),
-				WriteTimeout:          testhelpers.DurationPtr(60 * time.Second),
-				IdleTimeout:           testhelpers.DurationPtr(240 * time.Second),
-				ResponseHeaderTimeout: testhelpers.DurationPtr(60 * time.Second),
+				ReadHeaderTimeout:     new(20 * time.Second),
+				WriteTimeout:          new(60 * time.Second),
+				IdleTimeout:           new(240 * time.Second),
+				ResponseHeaderTimeout: new(60 * time.Second),
 				AccessLog:             new(false),
-				MaxRequestBodySize:    testhelpers.Int64Ptr(2097152),
+				MaxRequestBodySize:    new(int64(2097152)),
 				FunnelEnabled:         new(true),
 				Ephemeral:             false,
-				FlushInterval:         testhelpers.DurationPtr(2 * time.Second),
+				FlushInterval:         new(2 * time.Second),
 				UpstreamHeaders: map[string]string{
 					"X-Custom-Header": "value2",
 					"X-Trace-ID":      "456",

@@ -13,7 +13,6 @@ import (
 
 	"github.com/jtdowney/tsbridge/internal/config"
 	"github.com/jtdowney/tsbridge/internal/service"
-	"github.com/jtdowney/tsbridge/internal/testhelpers"
 )
 
 func TestServiceWithHeaderConfiguration(t *testing.T) {
@@ -210,7 +209,7 @@ func TestHeaderConfigurationWithWhois(t *testing.T) {
 			Name:         "test-service",
 			BackendAddr:  backend.URL,
 			WhoisEnabled: &whoisEnabled,
-			WhoisTimeout: testhelpers.DurationPtr(100 * time.Millisecond),
+			WhoisTimeout: new(100 * time.Millisecond),
 			UpstreamHeaders: map[string]string{
 				"X-Custom": "custom-value",
 			},

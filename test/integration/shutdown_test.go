@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jtdowney/tsbridge/internal/testhelpers"
 	"github.com/jtdowney/tsbridge/test/integration/helpers"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,7 +30,7 @@ func TestE2EGracefulShutdown(t *testing.T) {
 
 	// Create test configuration and write to file
 	cfg := helpers.CreateTestConfig(t, "shutdown-test-service", backend.Listener.Addr().String())
-	cfg.Global.ShutdownTimeout = testhelpers.DurationPtr(5 * time.Second)
+	cfg.Global.ShutdownTimeout = new(5 * time.Second)
 	configPath := helpers.WriteConfigFile(t, cfg)
 
 	// Start tsbridge process
@@ -64,7 +63,7 @@ func TestE2EShutdownWithActiveRequests(t *testing.T) {
 	// Create test configuration with short shutdown timeout
 	cfg := helpers.CreateTestConfig(t, "active-requests-service", backend.Listener.Addr().String())
 	cfg.Global.MetricsAddr = ""
-	cfg.Global.ShutdownTimeout = testhelpers.DurationPtr(2 * time.Second)
+	cfg.Global.ShutdownTimeout = new(2 * time.Second)
 	configPath := helpers.WriteConfigFile(t, cfg)
 
 	// Start tsbridge process

@@ -50,11 +50,11 @@ func (m *mockAddr) String() string {
 
 // stripScheme removes the http:// or https:// prefix from a URL
 func stripScheme(url string) string {
-	if strings.HasPrefix(url, "http://") {
-		return strings.TrimPrefix(url, "http://")
+	if after, ok := strings.CutPrefix(url, "http://"); ok {
+		return after
 	}
-	if strings.HasPrefix(url, "https://") {
-		return strings.TrimPrefix(url, "https://")
+	if after, ok := strings.CutPrefix(url, "https://"); ok {
+		return after
 	}
 	return url
 }

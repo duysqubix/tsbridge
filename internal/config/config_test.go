@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jtdowney/tsbridge/internal/errors"
-	"github.com/jtdowney/tsbridge/internal/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -853,17 +852,17 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
 						Name:         "api",
 						BackendAddr:  "127.0.0.1:8080",
 						WhoisEnabled: &trueVal,
-						WhoisTimeout: testhelpers.DurationPtr(1 * time.Second),
+						WhoisTimeout: new(1 * time.Second),
 						Tags:         []string{"tag:test"},
 					},
 				},
@@ -875,10 +874,10 @@ func TestValidate(t *testing.T) {
 			config: &Config{
 				Tailscale: Tailscale{},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -896,10 +895,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientID: "test-id",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -917,10 +916,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -939,10 +938,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{},
 			},
@@ -956,10 +955,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -984,10 +983,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1007,10 +1006,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1030,10 +1029,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1053,10 +1052,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(-5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(-5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1076,17 +1075,17 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
 						Name:         "api",
 						BackendAddr:  "https://example.com:443",
 						WhoisEnabled: &trueVal,
-						WhoisTimeout: testhelpers.DurationPtr(1 * time.Second),
+						WhoisTimeout: new(1 * time.Second),
 						Tags:         []string{"tag:test"},
 					},
 				},
@@ -1101,17 +1100,17 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
 						Name:               "api",
 						BackendAddr:        "https://self-signed.example.com:443",
 						WhoisEnabled:       &trueVal,
-						WhoisTimeout:       testhelpers.DurationPtr(1 * time.Second),
+						WhoisTimeout:       new(1 * time.Second),
 						InsecureSkipVerify: &trueVal,
 						Tags:               []string{"tag:test"},
 					},
@@ -1127,10 +1126,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1151,10 +1150,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 					MetricsAddr:       "not-a-valid-addr",
 				},
 				Services: []Service{
@@ -1175,10 +1174,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 					TrustedProxies:    []string{"invalid-ip"},
 				},
 				Services: []Service{
@@ -1199,10 +1198,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 					TrustedProxies:    []string{"10.0.0.0/33"},
 				},
 				Services: []Service{
@@ -1223,10 +1222,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 					TrustedProxies:    []string{"192.168.1.1", "10.0.0.0/8", "172.16.0.0/12"},
 				},
 				Services: []Service{
@@ -1248,10 +1247,10 @@ func TestValidate(t *testing.T) {
 					AuthKey:           "test-auth-key",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1270,10 +1269,10 @@ func TestValidate(t *testing.T) {
 					AuthKey: "test-auth-key",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1294,10 +1293,10 @@ func TestValidate(t *testing.T) {
 					StateDir:          "/var/lib/tsbridge",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1318,10 +1317,10 @@ func TestValidate(t *testing.T) {
 					StateDir:          "",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1341,10 +1340,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1366,11 +1365,11 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout:     testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:          testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:       testhelpers.DurationPtr(15 * time.Second),
-					ResponseHeaderTimeout: testhelpers.DurationPtr(-1 * time.Second),
+					ReadHeaderTimeout:     new(5 * time.Second),
+					WriteTimeout:          new(10 * time.Second),
+					IdleTimeout:           new(120 * time.Second),
+					ShutdownTimeout:       new(15 * time.Second),
+					ResponseHeaderTimeout: new(-1 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1390,11 +1389,11 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
-					DialTimeout:       testhelpers.DurationPtr(-1 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
+					DialTimeout:       new(-1 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1414,11 +1413,11 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
-					KeepAliveTimeout:  testhelpers.DurationPtr(-1 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
+					KeepAliveTimeout:  new(-1 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1438,11 +1437,11 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
-					IdleConnTimeout:   testhelpers.DurationPtr(-1 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
+					IdleConnTimeout:   new(-1 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1462,11 +1461,11 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout:   testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:        testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:         testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:     testhelpers.DurationPtr(15 * time.Second),
-					TLSHandshakeTimeout: testhelpers.DurationPtr(-1 * time.Second),
+					ReadHeaderTimeout:   new(5 * time.Second),
+					WriteTimeout:        new(10 * time.Second),
+					IdleTimeout:         new(120 * time.Second),
+					ShutdownTimeout:     new(15 * time.Second),
+					TLSHandshakeTimeout: new(-1 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1486,11 +1485,11 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout:     testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:          testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:       testhelpers.DurationPtr(15 * time.Second),
-					ExpectContinueTimeout: testhelpers.DurationPtr(-1 * time.Second),
+					ReadHeaderTimeout:     new(5 * time.Second),
+					WriteTimeout:          new(10 * time.Second),
+					IdleTimeout:           new(120 * time.Second),
+					ShutdownTimeout:       new(15 * time.Second),
+					ExpectContinueTimeout: new(-1 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1510,11 +1509,11 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout:        testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:             testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:              testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:          testhelpers.DurationPtr(15 * time.Second),
-					MetricsReadHeaderTimeout: testhelpers.DurationPtr(-1 * time.Second),
+					ReadHeaderTimeout:        new(5 * time.Second),
+					WriteTimeout:             new(10 * time.Second),
+					IdleTimeout:              new(120 * time.Second),
+					ShutdownTimeout:          new(15 * time.Second),
+					MetricsReadHeaderTimeout: new(-1 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1534,11 +1533,11 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
-					FlushInterval:     testhelpers.DurationPtr(-1 * time.Millisecond),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
+					FlushInterval:     new(-1 * time.Millisecond),
 				},
 				Services: []Service{
 					{
@@ -1558,11 +1557,11 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
-					FlushInterval:     testhelpers.DurationPtr(-2 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
+					FlushInterval:     new(-2 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1582,17 +1581,17 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
 						Name:                  "api",
 						BackendAddr:           "127.0.0.1:8080",
 						Tags:                  []string{"tag:test"},
-						ResponseHeaderTimeout: testhelpers.DurationPtr(-1 * time.Second),
+						ResponseHeaderTimeout: new(-1 * time.Second),
 					},
 				},
 			},
@@ -1606,17 +1605,17 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
 						Name:          "api",
 						BackendAddr:   "127.0.0.1:8080",
 						Tags:          []string{"tag:test"},
-						FlushInterval: testhelpers.DurationPtr(-1 * time.Millisecond),
+						FlushInterval: new(-1 * time.Millisecond),
 					},
 				},
 			},
@@ -1630,10 +1629,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(0),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(time.Duration(0)),
 				},
 				Services: []Service{
 					{
@@ -1653,11 +1652,11 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
-					StartupTimeout:    testhelpers.DurationPtr(0),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
+					StartupTimeout:    new(time.Duration(0)),
 				},
 				Services: []Service{
 					{
@@ -1697,10 +1696,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1721,10 +1720,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1745,10 +1744,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1769,10 +1768,10 @@ func TestValidate(t *testing.T) {
 					OAuthClientSecret: "test-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+					ReadHeaderTimeout: new(5 * time.Second),
+					WriteTimeout:      new(10 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(15 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1815,11 +1814,11 @@ func TestNormalize(t *testing.T) {
 			name: "service inherits all global timeouts",
 			config: &Config{
 				Global: Global{
-					ReadHeaderTimeout:     testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:          testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-					ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-					StartupTimeout:        testhelpers.DurationPtr(60 * time.Second),
+					ReadHeaderTimeout:     new(5 * time.Second),
+					WriteTimeout:          new(10 * time.Second),
+					IdleTimeout:           new(120 * time.Second),
+					ResponseHeaderTimeout: new(30 * time.Second),
+					StartupTimeout:        new(60 * time.Second),
 				},
 				Services: []Service{
 					{
@@ -1831,21 +1830,21 @@ func TestNormalize(t *testing.T) {
 			},
 			expected: &Config{
 				Global: Global{
-					ReadHeaderTimeout:     testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:          testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-					ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-					StartupTimeout:        testhelpers.DurationPtr(60 * time.Second),
+					ReadHeaderTimeout:     new(5 * time.Second),
+					WriteTimeout:          new(10 * time.Second),
+					IdleTimeout:           new(120 * time.Second),
+					ResponseHeaderTimeout: new(30 * time.Second),
+					StartupTimeout:        new(60 * time.Second),
 				},
 				Services: []Service{
 					{
 						Name:                  "api",
 						BackendAddr:           "127.0.0.1:8080",
-						ReadHeaderTimeout:     testhelpers.DurationPtr(5 * time.Second),
-						WriteTimeout:          testhelpers.DurationPtr(10 * time.Second),
-						IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-						ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-						StartupTimeout:        testhelpers.DurationPtr(60 * time.Second),
+						ReadHeaderTimeout:     new(5 * time.Second),
+						WriteTimeout:          new(10 * time.Second),
+						IdleTimeout:           new(120 * time.Second),
+						ResponseHeaderTimeout: new(30 * time.Second),
+						StartupTimeout:        new(60 * time.Second),
 					},
 				},
 			},
@@ -1854,41 +1853,41 @@ func TestNormalize(t *testing.T) {
 			name: "service keeps its own timeouts",
 			config: &Config{
 				Global: Global{
-					ReadHeaderTimeout:     testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:          testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-					ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-					StartupTimeout:        testhelpers.DurationPtr(60 * time.Second),
+					ReadHeaderTimeout:     new(5 * time.Second),
+					WriteTimeout:          new(10 * time.Second),
+					IdleTimeout:           new(120 * time.Second),
+					ResponseHeaderTimeout: new(30 * time.Second),
+					StartupTimeout:        new(60 * time.Second),
 				},
 				Services: []Service{
 					{
 						Name:                  "api",
 						BackendAddr:           "127.0.0.1:8080",
-						ReadHeaderTimeout:     testhelpers.DurationPtr(15 * time.Second),
-						WriteTimeout:          testhelpers.DurationPtr(20 * time.Second),
-						IdleTimeout:           testhelpers.DurationPtr(180 * time.Second),
-						ResponseHeaderTimeout: testhelpers.DurationPtr(45 * time.Second),
-						StartupTimeout:        testhelpers.DurationPtr(90 * time.Second),
+						ReadHeaderTimeout:     new(15 * time.Second),
+						WriteTimeout:          new(20 * time.Second),
+						IdleTimeout:           new(180 * time.Second),
+						ResponseHeaderTimeout: new(45 * time.Second),
+						StartupTimeout:        new(90 * time.Second),
 					},
 				},
 			},
 			expected: &Config{
 				Global: Global{
-					ReadHeaderTimeout:     testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:          testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-					ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-					StartupTimeout:        testhelpers.DurationPtr(60 * time.Second),
+					ReadHeaderTimeout:     new(5 * time.Second),
+					WriteTimeout:          new(10 * time.Second),
+					IdleTimeout:           new(120 * time.Second),
+					ResponseHeaderTimeout: new(30 * time.Second),
+					StartupTimeout:        new(60 * time.Second),
 				},
 				Services: []Service{
 					{
 						Name:                  "api",
 						BackendAddr:           "127.0.0.1:8080",
-						ReadHeaderTimeout:     testhelpers.DurationPtr(15 * time.Second),
-						WriteTimeout:          testhelpers.DurationPtr(20 * time.Second),
-						IdleTimeout:           testhelpers.DurationPtr(180 * time.Second),
-						ResponseHeaderTimeout: testhelpers.DurationPtr(45 * time.Second),
-						StartupTimeout:        testhelpers.DurationPtr(90 * time.Second),
+						ReadHeaderTimeout:     new(15 * time.Second),
+						WriteTimeout:          new(20 * time.Second),
+						IdleTimeout:           new(180 * time.Second),
+						ResponseHeaderTimeout: new(45 * time.Second),
+						StartupTimeout:        new(90 * time.Second),
 					},
 				},
 			},
@@ -1897,37 +1896,37 @@ func TestNormalize(t *testing.T) {
 			name: "service inherits only missing timeouts",
 			config: &Config{
 				Global: Global{
-					ReadHeaderTimeout:     testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:          testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-					ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
+					ReadHeaderTimeout:     new(5 * time.Second),
+					WriteTimeout:          new(10 * time.Second),
+					IdleTimeout:           new(120 * time.Second),
+					ResponseHeaderTimeout: new(30 * time.Second),
 				},
 				Services: []Service{
 					{
 						Name:              "api",
 						BackendAddr:       "127.0.0.1:8080",
-						ReadHeaderTimeout: testhelpers.DurationPtr(15 * time.Second),
+						ReadHeaderTimeout: new(15 * time.Second),
 						WriteTimeout:      nil, // Should inherit from global
-						IdleTimeout:       testhelpers.DurationPtr(180 * time.Second),
+						IdleTimeout:       new(180 * time.Second),
 						// ResponseHeaderTimeout not set, should inherit
 					},
 				},
 			},
 			expected: &Config{
 				Global: Global{
-					ReadHeaderTimeout:     testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:          testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-					ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
+					ReadHeaderTimeout:     new(5 * time.Second),
+					WriteTimeout:          new(10 * time.Second),
+					IdleTimeout:           new(120 * time.Second),
+					ResponseHeaderTimeout: new(30 * time.Second),
 				},
 				Services: []Service{
 					{
 						Name:                  "api",
 						BackendAddr:           "127.0.0.1:8080",
-						ReadHeaderTimeout:     testhelpers.DurationPtr(15 * time.Second),
-						WriteTimeout:          testhelpers.DurationPtr(10 * time.Second), // Inherited
-						IdleTimeout:           testhelpers.DurationPtr(180 * time.Second),
-						ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second), // Inherited
+						ReadHeaderTimeout:     new(15 * time.Second),
+						WriteTimeout:          new(10 * time.Second), // Inherited
+						IdleTimeout:           new(180 * time.Second),
+						ResponseHeaderTimeout: new(30 * time.Second), // Inherited
 					},
 				},
 			},
@@ -1936,47 +1935,47 @@ func TestNormalize(t *testing.T) {
 			name: "multiple services normalized correctly",
 			config: &Config{
 				Global: Global{
-					ReadHeaderTimeout:     testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:          testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-					ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
+					ReadHeaderTimeout:     new(5 * time.Second),
+					WriteTimeout:          new(10 * time.Second),
+					IdleTimeout:           new(120 * time.Second),
+					ResponseHeaderTimeout: new(30 * time.Second),
 				},
 				Services: []Service{
 					{
 						Name:              "api",
 						BackendAddr:       "127.0.0.1:8080",
-						ReadHeaderTimeout: testhelpers.DurationPtr(15 * time.Second),
+						ReadHeaderTimeout: new(15 * time.Second),
 					},
 					{
 						Name:         "web",
 						BackendAddr:  "127.0.0.1:8081",
-						WriteTimeout: testhelpers.DurationPtr(25 * time.Second),
+						WriteTimeout: new(25 * time.Second),
 					},
 				},
 			},
 			expected: &Config{
 				Global: Global{
-					ReadHeaderTimeout:     testhelpers.DurationPtr(5 * time.Second),
-					WriteTimeout:          testhelpers.DurationPtr(10 * time.Second),
-					IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-					ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
+					ReadHeaderTimeout:     new(5 * time.Second),
+					WriteTimeout:          new(10 * time.Second),
+					IdleTimeout:           new(120 * time.Second),
+					ResponseHeaderTimeout: new(30 * time.Second),
 				},
 				Services: []Service{
 					{
 						Name:                  "api",
 						BackendAddr:           "127.0.0.1:8080",
-						ReadHeaderTimeout:     testhelpers.DurationPtr(15 * time.Second),
-						WriteTimeout:          testhelpers.DurationPtr(10 * time.Second),  // Inherited
-						IdleTimeout:           testhelpers.DurationPtr(120 * time.Second), // Inherited
-						ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),  // Inherited
+						ReadHeaderTimeout:     new(15 * time.Second),
+						WriteTimeout:          new(10 * time.Second),  // Inherited
+						IdleTimeout:           new(120 * time.Second), // Inherited
+						ResponseHeaderTimeout: new(30 * time.Second),  // Inherited
 					},
 					{
 						Name:                  "web",
 						BackendAddr:           "127.0.0.1:8081",
-						ReadHeaderTimeout:     testhelpers.DurationPtr(5 * time.Second), // Inherited
-						WriteTimeout:          testhelpers.DurationPtr(25 * time.Second),
-						IdleTimeout:           testhelpers.DurationPtr(120 * time.Second), // Inherited
-						ResponseHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),  // Inherited
+						ReadHeaderTimeout:     new(5 * time.Second), // Inherited
+						WriteTimeout:          new(25 * time.Second),
+						IdleTimeout:           new(120 * time.Second), // Inherited
+						ResponseHeaderTimeout: new(30 * time.Second),  // Inherited
 					},
 				},
 			},
@@ -2188,10 +2187,10 @@ func TestConfigString(t *testing.T) {
 			StateDir:          "/var/lib/tsbridge",
 		},
 		Global: Global{
-			ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-			WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-			IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-			ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+			ReadHeaderTimeout: new(5 * time.Second),
+			WriteTimeout:      new(10 * time.Second),
+			IdleTimeout:       new(120 * time.Second),
+			ShutdownTimeout:   new(15 * time.Second),
 			MetricsAddr:       ":9090",
 		},
 		Services: []Service{
@@ -2199,7 +2198,7 @@ func TestConfigString(t *testing.T) {
 				Name:         "api",
 				BackendAddr:  "127.0.0.1:8080",
 				WhoisEnabled: &[]bool{true}[0],
-				WhoisTimeout: testhelpers.DurationPtr(1 * time.Second),
+				WhoisTimeout: new(1 * time.Second),
 			},
 			{
 				Name:        "web",
@@ -2872,13 +2871,13 @@ tags = ["tag:test"]
 func TestFlushIntervalNormalization(t *testing.T) {
 	cfg := &Config{
 		Global: Global{
-			FlushInterval: testhelpers.DurationPtr(100 * time.Millisecond),
+			FlushInterval: new(100 * time.Millisecond),
 		},
 		Services: []Service{
 			{
 				Name:          "with-override",
 				BackendAddr:   "localhost:8080",
-				FlushInterval: testhelpers.DurationPtr(50 * time.Millisecond),
+				FlushInterval: new(50 * time.Millisecond),
 			},
 			{
 				Name:        "without-override",
@@ -3088,10 +3087,10 @@ func TestTagsInheritance(t *testing.T) {
 				DefaultTags:       []string{"tag:global", "tag:default"},
 			},
 			Global: Global{
-				ReadHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-				WriteTimeout:      testhelpers.DurationPtr(30 * time.Second),
-				IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-				ShutdownTimeout:   testhelpers.DurationPtr(30 * time.Second),
+				ReadHeaderTimeout: new(30 * time.Second),
+				WriteTimeout:      new(30 * time.Second),
+				IdleTimeout:       new(120 * time.Second),
+				ShutdownTimeout:   new(30 * time.Second),
 			},
 			Services: []Service{
 				{
@@ -3154,7 +3153,7 @@ backend_addr = "localhost:8080"
 		// Create a config directly without loading from file to test pre-SetDefaults state
 		cfg := &Config{
 			Global: Global{
-				ReadHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
+				ReadHeaderTimeout: new(30 * time.Second),
 				// WriteTimeout not set, should be nil
 			},
 		}
@@ -3183,7 +3182,7 @@ backend_addr = "localhost:8080"
 		// Test case 2: When WriteTimeout is set to 0, should keep 0
 		cfg2 := &Config{
 			Global: Global{
-				WriteTimeout: testhelpers.DurationPtr(0),
+				WriteTimeout: new(time.Duration(0)),
 			},
 		}
 		cfg2.SetDefaults()
@@ -3196,7 +3195,7 @@ backend_addr = "localhost:8080"
 		// Test case 1: Service inherits global when not set
 		cfg1 := &Config{
 			Global: Global{
-				WriteTimeout: testhelpers.DurationPtr(60 * time.Second),
+				WriteTimeout: new(60 * time.Second),
 			},
 			Services: []Service{
 				{
@@ -3213,13 +3212,13 @@ backend_addr = "localhost:8080"
 		// Test case 2: Service keeps its own value when set
 		cfg2 := &Config{
 			Global: Global{
-				WriteTimeout: testhelpers.DurationPtr(60 * time.Second),
+				WriteTimeout: new(60 * time.Second),
 			},
 			Services: []Service{
 				{
 					Name:         "test",
 					BackendAddr:  "localhost:8080",
-					WriteTimeout: testhelpers.DurationPtr(0),
+					WriteTimeout: new(time.Duration(0)),
 				},
 			},
 		}
@@ -3237,10 +3236,10 @@ func TestValidateWithProvider(t *testing.T) {
 				OAuthClientSecret: "test-secret",
 			},
 			Global: Global{
-				ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-				WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-				IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-				ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+				ReadHeaderTimeout: new(5 * time.Second),
+				WriteTimeout:      new(10 * time.Second),
+				IdleTimeout:       new(120 * time.Second),
+				ShutdownTimeout:   new(15 * time.Second),
 			},
 			Services: []Service{},
 		}
@@ -3267,10 +3266,10 @@ func TestValidateWithProvider(t *testing.T) {
 				OAuthClientSecret: "test-secret",
 			},
 			Global: Global{
-				ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-				WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-				IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-				ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+				ReadHeaderTimeout: new(5 * time.Second),
+				WriteTimeout:      new(10 * time.Second),
+				IdleTimeout:       new(120 * time.Second),
+				ShutdownTimeout:   new(15 * time.Second),
 			},
 			Services: []Service{},
 		}
@@ -3290,10 +3289,10 @@ func TestValidateWithProvider(t *testing.T) {
 				OAuthClientSecret: "test-secret",
 			},
 			Global: Global{
-				ReadHeaderTimeout: testhelpers.DurationPtr(5 * time.Second),
-				WriteTimeout:      testhelpers.DurationPtr(10 * time.Second),
-				IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-				ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+				ReadHeaderTimeout: new(5 * time.Second),
+				WriteTimeout:      new(10 * time.Second),
+				IdleTimeout:       new(120 * time.Second),
+				ShutdownTimeout:   new(15 * time.Second),
 			},
 			Services: []Service{
 				{
@@ -3354,7 +3353,7 @@ tags = ["tag:test"]
 max_request_body_size = "100MB"
 `,
 			wantGlobal:     10 * 1024 * 1024,
-			wantService:    int64Ptr(100 * 1024 * 1024),
+			wantService:    new(int64(100 * 1024 * 1024)),
 			wantServiceStr: "100MB",
 		},
 		{
@@ -3408,7 +3407,7 @@ tags = ["tag:test"]
 max_request_body_size = "-1"
 `,
 			wantGlobal:  10 * 1024 * 1024,
-			wantService: int64Ptr(-1),
+			wantService: new(int64(-1)),
 		},
 	}
 
@@ -3446,11 +3445,6 @@ max_request_body_size = "-1"
 			}
 		})
 	}
-}
-
-//go:fix inline
-func int64Ptr(i int64) *int64 {
-	return new(i)
 }
 
 func TestValidateBackendAddress(t *testing.T) {

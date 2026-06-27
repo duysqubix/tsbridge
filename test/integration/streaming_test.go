@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/testhelpers"
 	"github.com/jtdowney/tsbridge/test/integration/helpers"
 	"github.com/stretchr/testify/assert"
 )
@@ -73,18 +72,18 @@ func TestStreamingWithZeroTimeout(t *testing.T) {
 			},
 			Global: config.Global{
 				MetricsAddr:       "localhost:0",
-				ReadHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-				WriteTimeout:      testhelpers.DurationPtr(30 * time.Second),
-				IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-				ShutdownTimeout:   testhelpers.DurationPtr(15 * time.Second),
+				ReadHeaderTimeout: new(30 * time.Second),
+				WriteTimeout:      new(30 * time.Second),
+				IdleTimeout:       new(120 * time.Second),
+				ShutdownTimeout:   new(15 * time.Second),
 			},
 			Services: []config.Service{
 				{
 					Name:              "streaming-test",
 					BackendAddr:       backend.Listener.Addr().String(),
-					WriteTimeout:      testhelpers.DurationPtr(0), // Disable timeout
-					ReadHeaderTimeout: testhelpers.DurationPtr(10 * time.Second),
-					FlushInterval:     testhelpers.DurationPtr(100 * time.Millisecond),
+					WriteTimeout:      new(time.Duration(0)), // Disable timeout
+					ReadHeaderTimeout: new(10 * time.Second),
+					FlushInterval:     new(100 * time.Millisecond),
 					TLSMode:           "off",
 				},
 			},
@@ -122,10 +121,10 @@ func TestStreamingWithZeroTimeout(t *testing.T) {
 			},
 			Global: config.Global{
 				MetricsAddr:       "localhost:0",
-				ReadHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-				WriteTimeout:      testhelpers.DurationPtr(30 * time.Second),
-				IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-				ShutdownTimeout:   testhelpers.DurationPtr(10 * time.Second),
+				ReadHeaderTimeout: new(30 * time.Second),
+				WriteTimeout:      new(30 * time.Second),
+				IdleTimeout:       new(120 * time.Second),
+				ShutdownTimeout:   new(10 * time.Second),
 			},
 			Services: []config.Service{
 				{
@@ -137,13 +136,13 @@ func TestStreamingWithZeroTimeout(t *testing.T) {
 				{
 					Name:         "zero-timeout",
 					BackendAddr:  backend.Listener.Addr().String(),
-					WriteTimeout: testhelpers.DurationPtr(0), // Explicitly disabled
+					WriteTimeout: new(time.Duration(0)), // Explicitly disabled
 					TLSMode:      "off",
 				},
 				{
 					Name:         "custom-timeout",
 					BackendAddr:  backend.Listener.Addr().String(),
-					WriteTimeout: testhelpers.DurationPtr(60 * time.Second),
+					WriteTimeout: new(60 * time.Second),
 					TLSMode:      "off",
 				},
 			},
@@ -195,11 +194,11 @@ func TestFlushIntervalWithStreaming(t *testing.T) {
 		},
 		Global: config.Global{
 			MetricsAddr:       "localhost:0",
-			ReadHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-			WriteTimeout:      testhelpers.DurationPtr(30 * time.Second),
-			IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-			ShutdownTimeout:   testhelpers.DurationPtr(10 * time.Second),
-			FlushInterval:     testhelpers.DurationPtr(1 * time.Second), // Global default
+			ReadHeaderTimeout: new(30 * time.Second),
+			WriteTimeout:      new(30 * time.Second),
+			IdleTimeout:       new(120 * time.Second),
+			ShutdownTimeout:   new(10 * time.Second),
+			FlushInterval:     new(1 * time.Second), // Global default
 		},
 		Services: []config.Service{
 			{
@@ -211,13 +210,13 @@ func TestFlushIntervalWithStreaming(t *testing.T) {
 			{
 				Name:          "immediate-flush",
 				BackendAddr:   backend.Listener.Addr().String(),
-				FlushInterval: testhelpers.DurationPtr(-1 * time.Millisecond), // Immediate flush
+				FlushInterval: new(-1 * time.Millisecond), // Immediate flush
 				TLSMode:       "off",
 			},
 			{
 				Name:          "no-flush",
 				BackendAddr:   backend.Listener.Addr().String(),
-				FlushInterval: testhelpers.DurationPtr(0), // Default buffering
+				FlushInterval: new(time.Duration(0)), // Default buffering
 				TLSMode:       "off",
 			},
 		},

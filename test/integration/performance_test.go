@@ -48,7 +48,7 @@ func TestMemoryLeaks(t *testing.T) {
 
 	// Run multiple cycles of server creation and destruction
 	const cycles = 5
-	for i := 0; i < cycles; i++ {
+	for i := range cycles {
 		t.Logf("Starting cycle %d/%d", i+1, cycles)
 
 		// Create a temporary directory for this cycle's state
@@ -226,7 +226,7 @@ whois_timeout = "5s"
 	}
 
 	// Run the process multiple times to check for clean shutdown
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		t.Logf("Starting iteration %d/3", i+1)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

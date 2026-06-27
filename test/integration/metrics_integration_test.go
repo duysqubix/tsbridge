@@ -101,7 +101,7 @@ func TestMetricsEndpointWithRealServer(t *testing.T) {
 	var resp *http.Response
 
 	// Retry a few times in case startup is slow
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		resp, err = http.Get(metricsURL)
 		if err == nil {
 			break
