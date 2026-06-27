@@ -454,91 +454,43 @@ func ProcessLoadedConfigWithProvider(cfg *Config, provider string) error {
 	return nil
 }
 
+// setDefault assigns *dst = &val when dst is nil.
+func setDefault[T any](dst **T, val T) {
+	if *dst == nil {
+		*dst = &val
+	}
+}
+
+// inheritDefault copies src into *dst as a fresh pointer when dst is nil.
+func inheritDefault[T any](dst **T, src *T) {
+	if *dst == nil && src != nil {
+		v := *src
+		*dst = &v
+	}
+}
+
 // SetDefaults sets default values for any unspecified configuration
 func (c *Config) SetDefaults() {
-	// Set global defaults if not specified
-	if c.Global.ReadHeaderTimeout == nil {
-		defaultTimeout := constants.DefaultReadHeaderTimeout
-		c.Global.ReadHeaderTimeout = &defaultTimeout
-	}
-	if c.Global.WriteTimeout == nil {
-		defaultTimeout := constants.DefaultWriteTimeout
-		c.Global.WriteTimeout = &defaultTimeout
-	}
-	if c.Global.IdleTimeout == nil {
-		defaultTimeout := constants.DefaultIdleTimeout
-		c.Global.IdleTimeout = &defaultTimeout
-	}
-	if c.Global.ShutdownTimeout == nil {
-		defaultTimeout := constants.DefaultShutdownTimeout
-		c.Global.ShutdownTimeout = &defaultTimeout
-	}
-	if c.Global.StartupTimeout == nil {
-		defaultTimeout := constants.DefaultStartupTimeout
-		c.Global.StartupTimeout = &defaultTimeout
-	}
+	setDefault(&c.Global.ReadHeaderTimeout, constants.DefaultReadHeaderTimeout)
+	setDefault(&c.Global.WriteTimeout, constants.DefaultWriteTimeout)
+	setDefault(&c.Global.IdleTimeout, constants.DefaultIdleTimeout)
+	setDefault(&c.Global.ShutdownTimeout, constants.DefaultShutdownTimeout)
+	setDefault(&c.Global.StartupTimeout, constants.DefaultStartupTimeout)
+	setDefault(&c.Global.AccessLog, constants.DefaultAccessLogEnabled)
+	setDefault(&c.Global.MaxRequestBodySize, int64(constants.DefaultMaxRequestBodySize))
+	setDefault(&c.Global.DialTimeout, constants.DefaultDialTimeout)
+	setDefault(&c.Global.KeepAliveTimeout, constants.DefaultKeepAliveTimeout)
+	setDefault(&c.Global.IdleConnTimeout, constants.DefaultIdleConnTimeout)
+	setDefault(&c.Global.TLSHandshakeTimeout, constants.DefaultTLSHandshakeTimeout)
+	setDefault(&c.Global.ExpectContinueTimeout, constants.DefaultExpectContinueTimeout)
+	setDefault(&c.Global.MetricsReadHeaderTimeout, constants.DefaultMetricsReadHeaderTimeout)
 
-	// Default access_log to true if not specified
-	if c.Global.AccessLog == nil {
-		enabled := constants.DefaultAccessLogEnabled
-		c.Global.AccessLog = &enabled
-	}
+	setDefault(&c.Tailscale.OAuthPreauthorized, true)
 
-	// Default max request body size if not specified
-	if c.Global.MaxRequestBodySize == nil {
-		defaultSize := int64(constants.DefaultMaxRequestBodySize)
-		c.Global.MaxRequestBodySize = &defaultSize
-	}
-
-	// Set transport timeout defaults if not specified
-	if c.Global.DialTimeout == nil {
-		defaultTimeout := constants.DefaultDialTimeout
-		c.Global.DialTimeout = &defaultTimeout
-	}
-	if c.Global.KeepAliveTimeout == nil {
-		defaultTimeout := constants.DefaultKeepAliveTimeout
-		c.Global.KeepAliveTimeout = &defaultTimeout
-	}
-	if c.Global.IdleConnTimeout == nil {
-		defaultTimeout := constants.DefaultIdleConnTimeout
-		c.Global.IdleConnTimeout = &defaultTimeout
-	}
-	if c.Global.TLSHandshakeTimeout == nil {
-		defaultTimeout := constants.DefaultTLSHandshakeTimeout
-		c.Global.TLSHandshakeTimeout = &defaultTimeout
-	}
-	if c.Global.ExpectContinueTimeout == nil {
-		defaultTimeout := constants.DefaultExpectContinueTimeout
-		c.Global.ExpectContinueTimeout = &defaultTimeout
-	}
-	if c.Global.MetricsReadHeaderTimeout == nil {
-		defaultTimeout := constants.DefaultMetricsReadHeaderTimeout
-		c.Global.MetricsReadHeaderTimeout = &defaultTimeout
-	}
-
-	// Set Tailscale defaults
-	if c.Tailscale.OAuthPreauthorized == nil {
-		defaultPreauth := true
-		c.Tailscale.OAuthPreauthorized = &defaultPreauth
-	}
-
-	// Set service defaults
 	for i := range c.Services {
 		svc := &c.Services[i]
-
-		// Default whois_enabled to false if not specified
-		if svc.WhoisEnabled == nil {
-			enabled := constants.DefaultWhoisEnabled
-			svc.WhoisEnabled = &enabled
-		}
-
-		// Default whois_timeout to 5 seconds if not specified
-		if svc.WhoisTimeout == nil {
-			defaultTimeout := constants.DefaultWhoisTimeout
-			svc.WhoisTimeout = &defaultTimeout
-		}
-
-		// Default tls_mode to "auto" if not specified
+		setDefault(&svc.WhoisEnabled, constants.DefaultWhoisEnabled)
+		setDefault(&svc.WhoisTimeout, constants.DefaultWhoisTimeout)
 		if svc.TLSMode == "" {
 			svc.TLSMode = constants.DefaultTLSMode
 		}
@@ -553,44 +505,17 @@ func (c *Config) Normalize() {
 	for i := range c.Services {
 		svc := &c.Services[i]
 
-		// Only copy if the service value is nil
-		if svc.StartupTimeout == nil && c.Global.StartupTimeout != nil {
-			timeout := *c.Global.StartupTimeout
-			svc.StartupTimeout = &timeout
-		}
-		if svc.ReadHeaderTimeout == nil && c.Global.ReadHeaderTimeout != nil {
-			// Copy the value, not the pointer
-			timeout := *c.Global.ReadHeaderTimeout
-			svc.ReadHeaderTimeout = &timeout
-		}
-		if svc.WriteTimeout == nil && c.Global.WriteTimeout != nil {
-			timeout := *c.Global.WriteTimeout
-			svc.WriteTimeout = &timeout
-		}
-		if svc.IdleTimeout == nil && c.Global.IdleTimeout != nil {
-			timeout := *c.Global.IdleTimeout
-			svc.IdleTimeout = &timeout
-		}
-		if svc.ResponseHeaderTimeout == nil && c.Global.ResponseHeaderTimeout != nil {
-			timeout := *c.Global.ResponseHeaderTimeout
-			svc.ResponseHeaderTimeout = &timeout
-		}
+		inheritDefault(&svc.StartupTimeout, c.Global.StartupTimeout)
+		inheritDefault(&svc.ReadHeaderTimeout, c.Global.ReadHeaderTimeout)
+		inheritDefault(&svc.WriteTimeout, c.Global.WriteTimeout)
+		inheritDefault(&svc.IdleTimeout, c.Global.IdleTimeout)
+		inheritDefault(&svc.ResponseHeaderTimeout, c.Global.ResponseHeaderTimeout)
+		inheritDefault(&svc.FlushInterval, c.Global.FlushInterval)
+		inheritDefault(&svc.MaxRequestBodySize, c.Global.MaxRequestBodySize)
 
 		// Copy access log setting if not set
 		if svc.AccessLog == nil {
 			svc.AccessLog = c.Global.AccessLog
-		}
-
-		// Copy flush interval if not set
-		if svc.FlushInterval == nil && c.Global.FlushInterval != nil {
-			interval := *c.Global.FlushInterval
-			svc.FlushInterval = &interval
-		}
-
-		// Copy max request body size if not set
-		if svc.MaxRequestBodySize == nil && c.Global.MaxRequestBodySize != nil {
-			size := *c.Global.MaxRequestBodySize
-			svc.MaxRequestBodySize = &size
 		}
 
 		// Copy tags if not set
