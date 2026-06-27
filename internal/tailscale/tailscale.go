@@ -107,7 +107,7 @@ func (s *Server) Listen(svc config.Service, tlsMode string, funnelEnabled bool) 
 	if svc.StartupTimeout != nil {
 		startupTimeout = *svc.StartupTimeout
 	}
-	if err := s.startServiceServer(serviceServer, svc.Name, startupTimeout); err != nil {
+	if err := s.startServerWithTimeout(serviceServer, svc.Name, startupTimeout); err != nil {
 		delete(s.serviceServers, svc.Name)
 		if closeErr := serviceServer.Close(); closeErr != nil {
 			slog.Debug("failed to close server after start failure", "service", svc.Name, "error", closeErr)
@@ -197,12 +197,6 @@ func (s *Server) prepareServiceAuth(serviceServer tsnetpkg.TSNetServer, svc conf
 		slog.Debug("using existing state, no auth key needed", "service", svc.Name)
 	}
 	return needsAuthKey, nil
-}
-
-// startServiceServer starts the tsnet server for a service.
-func (s *Server) startServiceServer(serviceServer tsnetpkg.TSNetServer, serviceName string, timeout time.Duration) error {
-	slog.Debug("starting tsnet server", "service", serviceName)
-	return s.startServerWithTimeout(serviceServer, serviceName, timeout)
 }
 
 // startServerWithTimeout starts a tsnet server with a timeout to prevent hanging.

@@ -36,11 +36,6 @@ func TestTimeoutConstants(t *testing.T) {
 			constant: DefaultWhoisTimeout,
 			expected: 5 * time.Second,
 		},
-		{
-			name:     "BackendHealthCheckTimeout",
-			constant: BackendHealthCheckTimeout,
-			expected: 5 * time.Second,
-		},
 	}
 
 	for _, tt := range tests {

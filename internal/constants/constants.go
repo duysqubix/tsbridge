@@ -27,10 +27,6 @@ const (
 	// Whois operations can be slow, so we use a reasonable timeout.
 	DefaultWhoisTimeout = 5 * time.Second
 
-	// BackendHealthCheckTimeout is the timeout used when checking if a backend is healthy.
-	// This should be relatively short to avoid blocking service startup.
-	BackendHealthCheckTimeout = 5 * time.Second
-
 	// DefaultDialTimeout is the default timeout for dialing backend connections.
 	DefaultDialTimeout = 30 * time.Second
 
@@ -167,9 +163,6 @@ const (
 
 	// TsnetServerStartTimeout is the delay before certificate priming.
 	TsnetServerStartTimeout = 5 * time.Second
-
-	// TsnetServerConnectTimeout is the timeout for connecting to Tailscale control plane.
-	TsnetServerConnectTimeout = 30 * time.Second
 
 	// TsnetServerCloseTimeout is the timeout for closing a tsnet server gracefully.
 	TsnetServerCloseTimeout = 3 * time.Second

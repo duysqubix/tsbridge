@@ -127,16 +127,6 @@ func WrapNetwork(err error, message string) error {
 	}
 }
 
-// WrapNetworkWithStatus wraps an error as a network error with HTTP status code
-func WrapNetworkWithStatus(err error, message string, statusCode int) error {
-	return &Error{
-		Type:           ErrTypeNetwork,
-		Message:        message,
-		Err:            err,
-		HTTPStatusCode: statusCode,
-	}
-}
-
 // WrapConfig wraps an error as a configuration error
 func WrapConfig(err error, message string) error {
 	return &Error{
