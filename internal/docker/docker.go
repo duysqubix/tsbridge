@@ -365,15 +365,8 @@ func (p *Provider) handleContainerEvent(ctx context.Context, configCh chan<- *co
 		return false
 	}
 
-	// Check if this container has tsbridge enabled (either "enabled" or "enable" label)
-	enabledLabel := fmt.Sprintf("%s.enabled", p.labelPrefix)
-	enableLabel := fmt.Sprintf("%s.enable", p.labelPrefix)
-
 	// Docker events include labels in the Actor.Attributes map
-	isEnabled := event.Actor.Attributes[enabledLabel] == "true" ||
-		event.Actor.Attributes[enableLabel] == "true"
-
-	if !isEnabled {
+	if !p.isContainerEnabled(event.Actor.Attributes) {
 		// Not a tsbridge-enabled container, ignore this event
 		return false
 	}
