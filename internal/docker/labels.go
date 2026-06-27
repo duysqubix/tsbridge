@@ -1,6 +1,7 @@
 package docker
 
 import (
+	stderrors "errors"
 	"fmt"
 	"log/slog"
 	"regexp"
@@ -41,6 +42,7 @@ func isValidHeaderValue(value string) bool {
 type labelParser struct {
 	labels map[string]string
 	prefix string
+	errs   []error
 }
 
 // newLabelParser creates a new label parser
@@ -71,11 +73,21 @@ func (p *labelParser) getInt(key string) *int {
 	return result
 }
 
-// getDuration gets a duration from labels
+// getDuration gets a duration from labels. A malformed value is recorded as a
+// parse error (retrievable via err) rather than silently defaulting, matching
+// the TOML/env config paths.
 func (p *labelParser) getDuration(key string) *time.Duration {
 	value := p.getString(key)
-	result, _ := parseDuration(value)
+	result, err := parseDuration(value)
+	if err != nil {
+		p.errs = append(p.errs, fmt.Errorf("invalid duration for %q (%q): %w", key, value, err))
+	}
 	return result
+}
+
+// err returns the joined parse errors accumulated by typed getters, or nil.
+func (p *labelParser) err() error {
+	return stderrors.Join(p.errs...)
 }
 
 // getByteSize gets a ByteSize pointer from labels
@@ -185,6 +197,10 @@ func (p *Provider) parseGlobalConfig(container *container.Summary, cfg *config.C
 		cfg.Global.MaxRequestBodySize = bs
 	}
 
+	if err := parser.err(); err != nil {
+		return errors.WrapProviderError(err, "docker", errors.ErrTypeValidation, "invalid global configuration")
+	}
+
 	return nil
 }
 
@@ -277,6 +293,10 @@ func (p *Provider) parseServiceConfig(container container.Summary) (*config.Serv
 	// Handle ephemeral (non-pointer bool)
 	if ephemeral := parser.getBool("service.ephemeral"); ephemeral != nil {
 		svc.Ephemeral = *ephemeral
+	}
+
+	if err := parser.err(); err != nil {
+		return nil, errors.WrapProviderError(err, "docker", errors.ErrTypeValidation, "invalid service configuration")
 	}
 
 	return svc, nil

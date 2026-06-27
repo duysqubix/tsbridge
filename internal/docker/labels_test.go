@@ -7,6 +7,7 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/jtdowney/tsbridge/internal/config"
+	tserrors "github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/jtdowney/tsbridge/internal/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -87,6 +88,40 @@ func TestDockerZeroDurationParsing(t *testing.T) {
 		duration := parser.getDuration("service.write_timeout")
 
 		assert.Nil(t, duration)
+	})
+}
+
+func TestDockerInvalidDurationSurfacesError(t *testing.T) {
+	provider := &Provider{labelPrefix: "tsbridge"}
+
+	t.Run("service config", func(t *testing.T) {
+		c := container.Summary{
+			Names: []string{"/test-container"},
+			Labels: map[string]string{
+				"tsbridge.enabled":                 "true",
+				"tsbridge.service.name":            "test-service",
+				"tsbridge.service.backend_addr":    "http://example.com",
+				"tsbridge.service.startup_timeout": "30sec",
+			},
+		}
+
+		_, err := provider.parseServiceConfig(c)
+		require.Error(t, err)
+		assert.True(t, tserrors.IsValidation(err))
+		assert.Contains(t, err.Error(), "service.startup_timeout")
+	})
+
+	t.Run("global config", func(t *testing.T) {
+		c := container.Summary{
+			Labels: map[string]string{
+				"tsbridge.global.write_timeout": "nope",
+			},
+		}
+
+		err := provider.parseGlobalConfig(&c, &config.Config{})
+		require.Error(t, err)
+		assert.True(t, tserrors.IsValidation(err))
+		assert.Contains(t, err.Error(), "global.write_timeout")
 	})
 }
 
