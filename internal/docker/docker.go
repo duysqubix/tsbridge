@@ -237,7 +237,7 @@ func (p *Provider) Load(ctx context.Context) (*config.Config, error) {
 // Watch monitors Docker events for container configuration changes
 func (p *Provider) Watch(ctx context.Context) (<-chan *config.Config, error) {
 	configCh := make(chan *config.Config)
-	eventOptions := p.createEventOptions()
+	eventOptions := createEventOptions()
 
 	slog.Info("starting Docker event watcher",
 		"label_prefix", p.labelPrefix,
@@ -273,7 +273,7 @@ func (p *Provider) pollLoop(ctx context.Context, configCh chan<- *config.Config)
 }
 
 // createEventOptions creates the event filter options for Docker events
-func (p *Provider) createEventOptions() events.ListOptions {
+func createEventOptions() events.ListOptions {
 	eventFilters := filters.NewArgs()
 	eventFilters.Add("type", "container")
 	eventFilters.Add("event", "start")

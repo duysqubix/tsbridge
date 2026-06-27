@@ -803,11 +803,7 @@ func TestDockerProvider_WatchWithEvents(t *testing.T) {
 
 	t.Run("createEventOptions configuration", func(t *testing.T) {
 		// Test the event options creation without requiring Docker client
-		provider := &Provider{
-			labelPrefix: "tsbridge",
-		}
-
-		options := provider.createEventOptions()
+		options := createEventOptions()
 		assert.NotNil(t, options.Filters)
 
 		// Verify event filters are properly configured
@@ -886,7 +882,7 @@ func TestDockerProvider_BackoffBehavior(t *testing.T) {
 
 		go func() {
 			defer close(done)
-			cancelled, streamEstablished = provider.processEventStream(ctx, configCh, provider.createEventOptions())
+			cancelled, streamEstablished = provider.processEventStream(ctx, configCh, createEventOptions())
 		}()
 
 		// Wait a moment then cancel - the pre-sent event should be processed immediately
@@ -921,7 +917,7 @@ func TestDockerProvider_BackoffBehavior(t *testing.T) {
 		mockClient.eventsError = fmt.Errorf("connection error")
 
 		// processEventStream should return quickly with error
-		cancelled, streamEstablished := provider.processEventStream(ctx, configCh, provider.createEventOptions())
+		cancelled, streamEstablished := provider.processEventStream(ctx, configCh, createEventOptions())
 
 		assert.False(t, cancelled, "should not be cancelled (error exit)")
 		assert.False(t, streamEstablished, "stream should not be established on error")
