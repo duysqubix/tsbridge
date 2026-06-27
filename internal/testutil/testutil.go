@@ -4,7 +4,6 @@ package testutil
 import (
 	"net"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/jtdowney/tsbridge/internal/config"
@@ -18,23 +17,16 @@ import (
 func CreateTestUnixSocket(t *testing.T) string {
 	t.Helper()
 
-	// Use a shorter path to avoid macOS unix socket path length limits
-	// Replace slashes with dashes to make valid filename
-	safeName := strings.ReplaceAll(t.Name(), "/", "-")
-	socketPath := "/tmp/tsb-" + safeName + ".sock"
+	dir, err := os.MkdirTemp("", "tsb")
+	require.NoError(t, err)
+	t.Cleanup(func() { os.RemoveAll(dir) })
 
-	// Remove any existing socket file
-	os.Remove(socketPath)
-
-	// Create a simple unix socket server
+	socketPath := dir + "/s.sock"
 	listener, err := net.Listen("unix", socketPath)
 	require.NoError(t, err)
-	t.Cleanup(func() {
-		listener.Close()
-		os.Remove(socketPath)
-	})
+	t.Cleanup(func() { listener.Close() })
 
-	// Start a simple server in the background
+	// Accept and immediately close connections so callers can dial the socket.
 	go func() {
 		for {
 			conn, err := listener.Accept()
