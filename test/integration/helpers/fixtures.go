@@ -18,7 +18,6 @@ type TestFixture struct {
 func NewTestFixture(t *testing.T) *TestFixture {
 	t.Helper()
 
-	boolFalse := false
 	return &TestFixture{
 		t: t,
 		cfg: &config.Config{
@@ -38,7 +37,7 @@ func NewTestFixture(t *testing.T) *TestFixture {
 					Name:         "test-service",
 					BackendAddr:  "localhost:8080",
 					TLSMode:      "off",
-					WhoisEnabled: &boolFalse,
+					WhoisEnabled: new(false),
 				},
 			},
 		},
@@ -56,12 +55,11 @@ func (f *TestFixture) WithService(name, backendAddr string) *TestFixture {
 	}
 
 	// Add new service
-	boolFalse := false
 	f.cfg.Services = append(f.cfg.Services, config.Service{
 		Name:         name,
 		BackendAddr:  backendAddr,
 		TLSMode:      "off",
-		WhoisEnabled: &boolFalse,
+		WhoisEnabled: new(false),
 	})
 	return f
 }

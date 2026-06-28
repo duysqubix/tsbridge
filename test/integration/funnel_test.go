@@ -63,7 +63,6 @@ func TestFunnelIntegration(t *testing.T) {
 	t.Run("service with funnel enabled uses ListenFunnel", func(t *testing.T) {
 		// Create test backend
 		backend := helpers.CreateTestBackend(t)
-		defer backend.Close()
 
 		// Track which listen method was called
 		var listenFunnelCalled bool
@@ -137,7 +136,6 @@ func TestFunnelIntegration(t *testing.T) {
 	t.Run("service without funnel uses TLS mode", func(t *testing.T) {
 		// Create test backend
 		backend := helpers.CreateTestBackend(t)
-		defer backend.Close()
 
 		// Track which listen method was called
 		var listenFunnelCalled bool
@@ -210,7 +208,6 @@ func TestFunnelIntegration(t *testing.T) {
 	t.Run("service with funnel disabled uses TLS mode", func(t *testing.T) {
 		// Create test backend
 		backend := helpers.CreateTestBackend(t)
-		defer backend.Close()
 
 		// Track which listen method was called
 		var listenFunnelCalled bool

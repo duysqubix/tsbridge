@@ -228,14 +228,9 @@ func TestReloadConfigWithRegistry_PartialFailure(t *testing.T) {
 
 	// Create a mock that fails only for svc4
 	mockRegistry := &mockServiceRegistryWithConditions{
-		mockServiceRegistry: mockServiceRegistry{
-			services:           make(map[string]*config.Service),
-			addServiceCalls:    []config.Service{},
-			removeServiceCalls: []string{},
-			updateServiceCalls: []updateCall{},
-		},
-		failOnServiceName: "svc4",
-		failureError:      errors.New("simulated error"),
+		mockServiceRegistry: *newMockServiceRegistry(),
+		failOnServiceName:   "svc4",
+		failureError:        errors.New("simulated error"),
 	}
 
 	// Pre-populate services

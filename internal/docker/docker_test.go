@@ -470,7 +470,7 @@ func TestDockerProviderErrorHandling(t *testing.T) {
 			// Check error message contains expected strings
 			errMsg := err.Error()
 			for _, want := range tt.wantContains {
-				if !contains(errMsg, want) {
+				if !strings.Contains(errMsg, want) {
 					t.Errorf("error message %q does not contain %q", errMsg, want)
 				}
 			}
@@ -538,7 +538,7 @@ func TestDockerLabelParsingErrors(t *testing.T) {
 				// Check error message contains expected strings
 				errMsg := err.Error()
 				for _, want := range tt.wantContains {
-					if !contains(errMsg, want) {
+					if !strings.Contains(errMsg, want) {
 						t.Errorf("error message %q does not contain %q", errMsg, want)
 					}
 				}
@@ -547,20 +547,6 @@ func TestDockerLabelParsingErrors(t *testing.T) {
 			}
 		})
 	}
-}
-
-// Helper function for string contains check
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsSubstring(s, substr))
-}
-
-func containsSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }
 
 // TestRaceConditionFixed tests that the race condition is fixed with getLastConfig
@@ -2351,85 +2337,6 @@ func TestDebouncedReload(t *testing.T) {
 	finalCount := atomic.LoadInt32(&fireCount)
 	assert.Equal(t, int32(1), finalCount, "Expected debouncing to result in only one timer execution")
 	assert.GreaterOrEqual(t, elapsed.Milliseconds(), int64(500), "Should wait for debounce period")
-}
-
-// MockStreamingDockerClient simulates a Docker client that provides events then fails
-type MockStreamingDockerClient struct {
-	failAfterCalls int
-	callCount      *int
-}
-
-func (m *MockStreamingDockerClient) ContainerList(ctx context.Context, options container.ListOptions) ([]container.Summary, error) {
-	return []container.Summary{}, nil
-}
-
-func (m *MockStreamingDockerClient) Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error) {
-	*m.callCount++
-	eventCh := make(chan events.Message, 1)
-	errCh := make(chan error, 1)
-
-	go func() {
-		// Send some events to establish a successful stream
-		if *m.callCount <= m.failAfterCalls {
-			// Send a container event
-			select {
-			case <-ctx.Done():
-				return
-			case eventCh <- events.Message{
-				Action: "start",
-				Type:   events.ContainerEventType,
-				Actor: events.Actor{
-					ID: "container1",
-					Attributes: map[string]string{
-						"name": "test-container",
-					},
-				},
-			}:
-				// Wait a bit then close to trigger reconnect
-				time.Sleep(300 * time.Millisecond)
-			}
-		}
-		// Close channels to simulate stream failure
-		close(eventCh)
-		close(errCh)
-	}()
-
-	return eventCh, errCh
-}
-
-func (m *MockStreamingDockerClient) Ping(ctx context.Context) (types.Ping, error) {
-	return types.Ping{}, nil
-}
-
-func (m *MockStreamingDockerClient) Close() error {
-	return nil
-}
-
-// MockSuccessfulDockerClient simulates a Docker client that works
-type MockSuccessfulDockerClient struct{}
-
-func (m *MockSuccessfulDockerClient) ContainerList(ctx context.Context, options container.ListOptions) ([]container.Summary, error) {
-	// Return empty list to avoid complications in Load()
-	return []container.Summary{}, nil
-}
-
-func (m *MockSuccessfulDockerClient) Events(ctx context.Context, options events.ListOptions) (<-chan events.Message, <-chan error) {
-	eventCh := make(chan events.Message)
-	errCh := make(chan error)
-
-	// Close channels immediately - not used in this test
-	close(eventCh)
-	close(errCh)
-
-	return eventCh, errCh
-}
-
-func (m *MockSuccessfulDockerClient) Ping(ctx context.Context) (types.Ping, error) {
-	return types.Ping{}, nil
-}
-
-func (m *MockSuccessfulDockerClient) Close() error {
-	return nil
 }
 
 // TestGetContainerByID tests the getContainerByID function

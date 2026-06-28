@@ -156,15 +156,17 @@ func (r *Registry) StartServices() error {
 
 // startService starts a single service
 func (r *Registry) startService(svcCfg config.Service) (*Service, error) {
+	funnelEnabled := svcCfg.FunnelEnabled != nil && *svcCfg.FunnelEnabled
+
 	phaseStart := time.Now()
 	slog.Debug("creating listener for service",
 		"service", svcCfg.Name,
 		"tls_mode", svcCfg.TLSMode,
-		"funnel_enabled", svcCfg.FunnelEnabled != nil && *svcCfg.FunnelEnabled,
+		"funnel_enabled", funnelEnabled,
 	)
 
 	// Create listener for this service
-	listener, err := r.tsServer.Listen(svcCfg, svcCfg.TLSMode, svcCfg.FunnelEnabled != nil && *svcCfg.FunnelEnabled)
+	listener, err := r.tsServer.Listen(svcCfg, svcCfg.TLSMode, funnelEnabled)
 	if err != nil {
 		return nil, tserrors.WrapResource(err, "creating listener")
 	}
@@ -221,7 +223,7 @@ func (r *Registry) startService(svcCfg config.Service) (*Service, error) {
 	}
 
 	// For Funnel-enabled services, extract the real client IP from FunnelConn
-	if svcCfg.FunnelEnabled != nil && *svcCfg.FunnelEnabled {
+	if funnelEnabled {
 		svc.server.ConnContext = funnel.ConnContext
 	}
 
@@ -251,7 +253,7 @@ func (r *Registry) startService(svcCfg config.Service) (*Service, error) {
 	// Start serving in background
 	go func() {
 		slog.Debug("service listening", "service", svcCfg.Name, "address", listener.Addr())
-		if err := svc.server.Serve(listener); err != nil && err != http.ErrServerClosed {
+		if err := svc.server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("service serve error", "service", svcCfg.Name, "error", err)
 		}
 	}()

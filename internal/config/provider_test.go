@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -325,7 +326,7 @@ missing bracket
 			// Check error message contains expected strings
 			errMsg := err.Error()
 			for _, want := range tt.wantContains {
-				if !contains(errMsg, want) {
+				if !strings.Contains(errMsg, want) {
 					t.Errorf("error message %q does not contain %q", errMsg, want)
 				}
 			}
@@ -356,7 +357,7 @@ func TestProviderErrorContext(t *testing.T) {
 		}
 
 		// Check that error message contains "file provider"
-		if !contains(err.Error(), "file provider") {
+		if !strings.Contains(err.Error(), "file provider") {
 			t.Errorf("error message does not contain provider context: %v", err)
 		}
 	})
@@ -380,7 +381,7 @@ func TestProviderValidationErrorContext(t *testing.T) {
 		}
 
 		// Should contain "file provider" in the message
-		if !contains(err.Error(), "file provider") {
+		if !strings.Contains(err.Error(), "file provider") {
 			t.Errorf("validation error does not contain provider context: %v", err)
 		}
 	})
@@ -412,24 +413,10 @@ name = "test-service"
 		}
 
 		// Should contain "file provider" in the message
-		if !contains(err.Error(), "file provider") {
+		if !strings.Contains(err.Error(), "file provider") {
 			t.Errorf("config processing error does not contain provider context: %v", err)
 		}
 	})
-}
-
-// Helper function for string contains check
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsSubstring(s, substr))
-}
-
-func containsSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }
 
 // mockProvider is a test provider implementation
@@ -514,7 +501,7 @@ func TestNewProviderWithRegistry(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !contains(err.Error(), "unknown provider type: unknown") {
+		if !strings.Contains(err.Error(), "unknown provider type: unknown") {
 			t.Errorf("expected error to contain 'unknown provider type: unknown', got %v", err)
 		}
 		if provider != nil {
@@ -532,7 +519,7 @@ func TestNewProviderWithRegistry(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !contains(err.Error(), "provider not registered: docker") {
+		if !strings.Contains(err.Error(), "provider not registered: docker") {
 			t.Errorf("expected error to contain 'provider not registered: docker', got %v", err)
 		}
 		if provider != nil {
@@ -744,7 +731,7 @@ name = "test-service"
 
 			// Check that error contains provider name
 			providerName := provider.Name()
-			if !contains(err.Error(), providerName) {
+			if !strings.Contains(err.Error(), providerName) {
 				t.Errorf("error %q does not contain provider name %q", err.Error(), providerName)
 			}
 		})

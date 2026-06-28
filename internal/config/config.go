@@ -98,12 +98,6 @@ type Service struct {
 	RemoveDownstream  []string          `mapstructure:"remove_downstream"`  // Headers to remove from downstream responses
 }
 
-// Load reads and parses the configuration from the specified file path.
-// It validates the configuration and returns an error if invalid.
-// The function supports:
-// - TOML file parsing
-// - Environment variable overrides
-// - Secret resolution from env vars and files
 // LoadWithProvider reads and parses the configuration with provider context.
 // It includes:
 // - Loading the base config from a TOML file
@@ -169,7 +163,8 @@ func LoadWithProvider(path string, provider string) (*Config, error) {
 	return &cfg, nil
 }
 
-// - Validation, defaults and normalization
+// Load reads and parses the configuration from the specified file path using
+// the "file" provider context.
 func Load(path string) (*Config, error) {
 	return LoadWithProvider(path, "file")
 }
@@ -218,21 +213,13 @@ func ParseByteSizeString(s string) (int64, error) {
 	switch strings.ToUpper(unit) {
 	case "B", "BYTE", "BYTES":
 		multiplier = 1
-	case "K", "KB":
+	case "K", "KB", "KIB":
 		multiplier = constants.BytesPerKB
-	case "KIB":
-		multiplier = constants.BytesPerKB
-	case "M", "MB":
+	case "M", "MB", "MIB":
 		multiplier = constants.BytesPerMB
-	case "MIB":
-		multiplier = constants.BytesPerMB
-	case "G", "GB":
+	case "G", "GB", "GIB":
 		multiplier = constants.BytesPerGB
-	case "GIB":
-		multiplier = constants.BytesPerGB
-	case "T", "TB":
-		multiplier = constants.BytesPerTB
-	case "TIB":
+	case "T", "TB", "TIB":
 		multiplier = constants.BytesPerTB
 	default:
 		return 0, fmt.Errorf("unknown unit %q in byte size: %q", unit, s)

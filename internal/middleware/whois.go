@@ -155,41 +155,37 @@ func isWhoisRetryableError(err error) bool {
 }
 
 func performWhoisLookup(client WhoisClient, timeout time.Duration, r *http.Request, cache *expirable.LRU[string, *apitype.WhoIsResponse]) {
-	var resp *apitype.WhoIsResponse
-	var err error
-
+	var cacheKey string
 	if cache != nil {
-		cacheKey := extractHostFromRemoteAddr(r.RemoteAddr)
+		cacheKey = extractHostFromRemoteAddr(r.RemoteAddr)
 		if cached, ok := cache.Get(cacheKey); ok {
-			resp = cached
-		} else {
-			resp, err = performWhoisWithRetryLogic(client, timeout, r)
-			if err != nil {
-				logWhoisError(err, r.RemoteAddr, timeout)
-				return
-			}
-
-			if resp != nil {
-				cache.Add(cacheKey, resp)
-			}
-		}
-	} else {
-		resp, err = performWhoisWithRetryLogic(client, timeout, r)
-		if err != nil {
-			logWhoisError(err, r.RemoteAddr, timeout)
+			addUserHeaders(r, cached)
+			addAddressHeaders(r, cached)
 			return
 		}
 	}
 
-	if resp != nil {
-		addUserHeaders(r, resp)
-		addAddressHeaders(r, resp)
+	resp, err := performWhoisWithRetryLogic(client, timeout, r)
+	if err != nil {
+		logWhoisError(err, r.RemoteAddr, timeout)
+		return
 	}
+
+	if resp == nil {
+		return
+	}
+
+	if cache != nil {
+		cache.Add(cacheKey, resp)
+	}
+
+	addUserHeaders(r, resp)
+	addAddressHeaders(r, resp)
 }
 
 // logWhoisError logs the appropriate error message based on the error type
 func logWhoisError(err error, remoteAddr string, timeout time.Duration) {
-	if err == context.DeadlineExceeded {
+	if errors.Is(err, context.DeadlineExceeded) {
 		slog.Warn("whois lookup timed out", "remote_addr", remoteAddr, "timeout", timeout)
 	} else {
 		slog.Warn("whois lookup failed", "remote_addr", remoteAddr, "error", err)

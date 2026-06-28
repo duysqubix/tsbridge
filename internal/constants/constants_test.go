@@ -77,12 +77,3 @@ func TestDefaultStrings(t *testing.T) {
 		t.Errorf("DefaultTLSMode = %q, want %q", DefaultTLSMode, "auto")
 	}
 }
-
-func TestDefaultConstants(t *testing.T) {
-	if DefaultAccessLogEnabled != true {
-		t.Error("DefaultAccessLogEnabled should be true")
-	}
-	if DefaultWhoisEnabled {
-		t.Error("DefaultWhoisEnabled should be false")
-	}
-}

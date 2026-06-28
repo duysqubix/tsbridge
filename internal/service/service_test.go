@@ -41,6 +41,27 @@ func testTailscaleServerFactory() (*tailscale.Server, error) {
 	return tailscale.NewServerWithFactory(cfg, factory)
 }
 
+// startEchoBackend starts a TCP listener that accepts and immediately closes
+// connections, returning its address. The listener is closed when the test ends.
+func startEchoBackend(t *testing.T) string {
+	t.Helper()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { listener.Close() })
+
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			conn.Close()
+		}
+	}()
+
+	return listener.Addr().String()
+}
+
 // MockTsnetServer simulates a tsnet.Server
 type MockTsnetServer struct {
 	whoisFunc func(ctx context.Context, remoteAddr string) (*apitype.WhoIsResponse, error)
@@ -83,21 +104,7 @@ func TestRegistry_GetMetricsCollector(t *testing.T) {
 }
 
 func TestRegistry_StartServices(t *testing.T) {
-	// Start a mock backend server
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-	defer listener.Close()
-
-	backendAddr := listener.Addr().String()
-	go func() {
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				return
-			}
-			conn.Close()
-		}
-	}()
+	backendAddr := startEchoBackend(t)
 
 	// Create config with services
 	cfg := &config.Config{
@@ -1138,21 +1145,7 @@ func TestService_NameField(t *testing.T) {
 
 // TestRegistry_StartServices_SetsServiceName verifies that startService sets the Name field
 func TestRegistry_StartServices_SetsServiceName(t *testing.T) {
-	// Start a mock backend server
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-	defer listener.Close()
-
-	backendAddr := listener.Addr().String()
-	go func() {
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				return
-			}
-			conn.Close()
-		}
-	}()
+	backendAddr := startEchoBackend(t)
 
 	// Create config with services
 	cfg := &config.Config{
@@ -1205,21 +1198,7 @@ func TestRegistry_StartServices_SetsServiceName(t *testing.T) {
 
 // TestRegistry_ServicesAsMap verifies that Registry stores services in a map
 func TestRegistry_ServicesAsMap(t *testing.T) {
-	// Start a mock backend server
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-	defer listener.Close()
-
-	backendAddr := listener.Addr().String()
-	go func() {
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				return
-			}
-			conn.Close()
-		}
-	}()
+	backendAddr := startEchoBackend(t)
 
 	// Create config with services
 	cfg := &config.Config{
@@ -1276,21 +1255,7 @@ func TestRegistry_ServicesAsMap(t *testing.T) {
 
 // TestRegistry_GetService verifies the GetService method
 func TestRegistry_GetService(t *testing.T) {
-	// Start a mock backend server
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-	defer listener.Close()
-
-	backendAddr := listener.Addr().String()
-	go func() {
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				return
-			}
-			conn.Close()
-		}
-	}()
+	backendAddr := startEchoBackend(t)
 
 	// Create config with services
 	cfg := &config.Config{

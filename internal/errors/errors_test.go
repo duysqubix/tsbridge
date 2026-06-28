@@ -697,7 +697,7 @@ func TestProviderErrorWrapping(t *testing.T) {
 			// Check error message contains expected strings
 			errMsg := err.Error()
 			for _, want := range tt.wantContains {
-				if !contains(errMsg, want) {
+				if !strings.Contains(errMsg, want) {
 					t.Errorf("error message %q does not contain %q", errMsg, want)
 				}
 			}
@@ -742,20 +742,6 @@ func TestNewProviderError(t *testing.T) {
 			}
 		})
 	}
-}
-
-// Helper function for string contains check
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsSubstring(s, substr))
-}
-
-func containsSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }
 
 func TestNewReloadError(t *testing.T) {

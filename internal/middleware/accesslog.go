@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"bufio"
-	"fmt"
+	"errors"
 	"log/slog"
 	"net"
 	"net/http"
@@ -34,7 +34,7 @@ func (w *accessLogResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) 
 	if hijacker, ok := w.ResponseWriter.(http.Hijacker); ok {
 		return hijacker.Hijack()
 	}
-	return nil, nil, fmt.Errorf("ResponseWriter does not support hijacking")
+	return nil, nil, errors.New("ResponseWriter does not support hijacking")
 }
 
 // Flush implements the http.Flusher interface for streaming support

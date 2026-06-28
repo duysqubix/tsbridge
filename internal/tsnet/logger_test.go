@@ -121,21 +121,20 @@ func TestTSNetLogAdapter(t *testing.T) {
 			adapter(tt.format, tt.args...)
 
 			// Parse the logged output
+			require.NotZero(t, buf.Len())
 			var logEntry map[string]any
-			if buf.Len() > 0 {
-				err := json.Unmarshal(buf.Bytes(), &logEntry)
-				require.NoError(t, err)
+			err := json.Unmarshal(buf.Bytes(), &logEntry)
+			require.NoError(t, err)
 
-				// Check log level
-				assert.Equal(t, tt.expectedLevel.String(), logEntry["level"])
+			// Check log level
+			assert.Equal(t, tt.expectedLevel.String(), logEntry["level"])
 
-				// Check message
-				assert.Equal(t, tt.expectedMsg, logEntry["msg"])
+			// Check message
+			assert.Equal(t, tt.expectedMsg, logEntry["msg"])
 
-				// Check expected attributes
-				for key, expectedValue := range tt.expectedAttrs {
-					assert.Equal(t, expectedValue, logEntry[key], "attribute %s", key)
-				}
+			// Check expected attributes
+			for key, expectedValue := range tt.expectedAttrs {
+				assert.Equal(t, expectedValue, logEntry[key], "attribute %s", key)
 			}
 		})
 	}

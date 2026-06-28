@@ -68,16 +68,12 @@ func NewAppWithOptions(cfg *config.Config, opts Options) (*App, error) {
 		return nil, err
 	}
 
-	var tsServer *tailscale.Server
-	var registry *service.Registry
-	var err error
-
 	// Use provided tsServer or create new one
-	if opts.TSServer != nil {
-		tsServer = opts.TSServer
-	} else {
+	tsServer := opts.TSServer
+	if tsServer == nil {
 		// Create tailscale server
 		slog.Debug("creating tailscale server")
+		var err error
 		tsServer, err = tailscale.NewServer(cfg.Tailscale)
 		if err != nil {
 			return nil, tserrors.WrapResource(err, "failed to create tailscale server")
@@ -85,9 +81,8 @@ func NewAppWithOptions(cfg *config.Config, opts Options) (*App, error) {
 	}
 
 	// Use provided registry or create new one
-	if opts.Registry != nil {
-		registry = opts.Registry
-	} else {
+	registry := opts.Registry
+	if registry == nil {
 		// Create service registry
 		registry = service.NewRegistry(cfg, tsServer)
 	}

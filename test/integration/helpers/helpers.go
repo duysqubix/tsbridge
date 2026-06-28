@@ -92,7 +92,6 @@ func CreateTrackingBackend(t *testing.T) (*httptest.Server, *RequestTracker) {
 func CreateTestConfig(t *testing.T, serviceName string, backendAddr string) *config.Config {
 	t.Helper()
 
-	boolFalse := false
 	return &config.Config{
 		Tailscale: config.Tailscale{
 			AuthKey:  config.RedactedString("tskey-auth-test123"),
@@ -110,7 +109,7 @@ func CreateTestConfig(t *testing.T, serviceName string, backendAddr string) *con
 				Name:         serviceName,
 				BackendAddr:  backendAddr,
 				TLSMode:      "off",
-				WhoisEnabled: &boolFalse,
+				WhoisEnabled: new(false),
 			},
 		},
 	}
@@ -120,7 +119,6 @@ func CreateTestConfig(t *testing.T, serviceName string, backendAddr string) *con
 func CreateMultiServiceConfig(t *testing.T, services map[string]string) *config.Config {
 	t.Helper()
 
-	boolFalse := false
 	cfg := &config.Config{
 		Tailscale: config.Tailscale{
 			AuthKey:  config.RedactedString("tskey-auth-test123"),
@@ -140,7 +138,7 @@ func CreateMultiServiceConfig(t *testing.T, services map[string]string) *config.
 			Name:         name,
 			BackendAddr:  addr,
 			TLSMode:      "off",
-			WhoisEnabled: &boolFalse,
+			WhoisEnabled: new(false),
 		})
 	}
 
@@ -170,7 +168,6 @@ type TSBridgeProcess struct {
 	outputChan chan string
 	t          *testing.T
 	shutdown   bool
-	output     string
 }
 
 // StartTSBridge starts a tsbridge process with common setup.
@@ -282,18 +279,6 @@ func (p *TSBridgeProcess) WaitForStartup() {
 // GetOutput returns the captured output from the process.
 // Should be called after Shutdown to ensure all output is captured.
 func (p *TSBridgeProcess) GetOutput() string {
-	// If we already have output from WaitForServices, use that
-	if p.output != "" {
-		// Continue reading any remaining output
-		select {
-		case additionalOutput := <-p.outputChan:
-			p.output += additionalOutput
-		case <-time.After(100 * time.Millisecond):
-			// No more output
-		}
-		return p.output
-	}
-
 	// If process is still running, shutdown first
 	if p.cmd.Process != nil {
 		p.Shutdown()

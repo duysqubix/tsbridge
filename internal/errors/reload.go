@@ -26,31 +26,23 @@ func (e *ReloadError) Error() string {
 	parts = append(parts, fmt.Sprintf("configuration reload partially failed (%d errors, %d successful):",
 		e.Failed, e.Successful))
 
-	// Report removal errors first (cleanup failures)
-	if len(e.RemoveErrors) > 0 {
-		parts = append(parts, "\nFailed to remove services:")
-		for name, err := range e.RemoveErrors {
-			parts = append(parts, fmt.Sprintf("  - %s: %v", name, err))
-		}
-	}
-
-	// Then update errors
-	if len(e.UpdateErrors) > 0 {
-		parts = append(parts, "\nFailed to update services:")
-		for name, err := range e.UpdateErrors {
-			parts = append(parts, fmt.Sprintf("  - %s: %v", name, err))
-		}
-	}
-
-	// Finally addition errors
-	if len(e.AddErrors) > 0 {
-		parts = append(parts, "\nFailed to add services:")
-		for name, err := range e.AddErrors {
-			parts = append(parts, fmt.Sprintf("  - %s: %v", name, err))
-		}
-	}
+	// Report removal errors first (cleanup failures), then updates, then additions
+	parts = appendErrorSection(parts, "\nFailed to remove services:", e.RemoveErrors)
+	parts = appendErrorSection(parts, "\nFailed to update services:", e.UpdateErrors)
+	parts = appendErrorSection(parts, "\nFailed to add services:", e.AddErrors)
 
 	return strings.Join(parts, "")
+}
+
+func appendErrorSection(parts []string, header string, errs map[string]error) []string {
+	if len(errs) == 0 {
+		return parts
+	}
+	parts = append(parts, header)
+	for name, err := range errs {
+		parts = append(parts, fmt.Sprintf("  - %s: %v", name, err))
+	}
+	return parts
 }
 
 // HasErrors returns true if there were any errors during reload

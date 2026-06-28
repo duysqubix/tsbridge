@@ -92,12 +92,8 @@ func TestNewApp(t *testing.T) {
 					TSServer: tsServer,
 				})
 
-				if tt.wantErr {
-					require.Error(t, err)
-				} else {
-					require.NoError(t, err)
-					require.NotNil(t, app)
-				}
+				require.NoError(t, err)
+				require.NotNil(t, app)
 			} else {
 				// For nil config or expected errors, use NewApp directly
 				app, err := NewApp(tt.cfg)
@@ -515,9 +511,7 @@ func TestAppStartWithPartialServiceFailures(t *testing.T) {
 		err = app.Start(ctx)
 
 		// Should succeed because we use lazy connections
-		if err != nil {
-			require.NoError(t, err, "expected app to start successfully with lazy connections")
-		}
+		require.NoError(t, err, "expected app to start successfully with lazy connections")
 	})
 
 	t.Run("metrics server continues when some services fail", func(t *testing.T) {
@@ -657,9 +651,7 @@ func TestAppShutdownErrorTypes(t *testing.T) {
 		cfg.SetDefaults()
 
 		app, err := NewApp(cfg)
-		if err != nil {
-			require.NoError(t, err, "failed to create app")
-		}
+		require.NoError(t, err, "failed to create app")
 
 		// Shutdown immediately (nothing to shut down)
 		ctx := context.Background()

@@ -57,6 +57,19 @@ func newTestHandler(backendAddr string, transportConfig *TransportConfig, truste
 	})
 }
 
+// newXFFEchoBackend returns a backend server that echoes the inbound
+// X-Forwarded-For and X-Real-IP headers back in X-Echo-* response headers.
+func newXFFEchoBackend(t *testing.T) *httptest.Server {
+	t.Helper()
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Echo-Forwarded-For", r.Header.Get("X-Forwarded-For"))
+		w.Header().Set("X-Echo-Real-IP", r.Header.Get("X-Real-IP"))
+		fmt.Fprint(w, "OK")
+	}))
+	t.Cleanup(backend.Close)
+	return backend
+}
+
 func TestHTTPProxy(t *testing.T) {
 	// Create a test backend server
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -438,13 +451,7 @@ func TestProxyHeaderHandling(t *testing.T) {
 }
 
 func TestXForwardedForSecurity(t *testing.T) {
-	// Create backend that echoes X-Forwarded-For header
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("X-Echo-Forwarded-For", r.Header.Get("X-Forwarded-For"))
-		w.Header().Set("X-Echo-Real-IP", r.Header.Get("X-Real-IP"))
-		fmt.Fprint(w, "OK")
-	}))
-	defer backend.Close()
+	backend := newXFFEchoBackend(t)
 
 	tests := []struct {
 		name                 string
@@ -505,13 +512,7 @@ func TestXForwardedForSecurity(t *testing.T) {
 }
 
 func TestXForwardedForWithTrustedProxies(t *testing.T) {
-	// Create backend that echoes X-Forwarded-For header
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("X-Echo-Forwarded-For", r.Header.Get("X-Forwarded-For"))
-		w.Header().Set("X-Echo-Real-IP", r.Header.Get("X-Real-IP"))
-		fmt.Fprint(w, "OK")
-	}))
-	defer backend.Close()
+	backend := newXFFEchoBackend(t)
 
 	tests := []struct {
 		name                 string
@@ -608,12 +609,7 @@ func TestXForwardedForWithTrustedProxies(t *testing.T) {
 }
 
 func TestXForwardedForWithFunnelSourceIP(t *testing.T) {
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("X-Echo-Forwarded-For", r.Header.Get("X-Forwarded-For"))
-		w.Header().Set("X-Echo-Real-IP", r.Header.Get("X-Real-IP"))
-		fmt.Fprint(w, "OK")
-	}))
-	defer backend.Close()
+	backend := newXFFEchoBackend(t)
 
 	tests := []struct {
 		name                 string

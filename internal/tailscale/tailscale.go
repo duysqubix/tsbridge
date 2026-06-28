@@ -326,7 +326,7 @@ func (s *Server) determineListenAddr(svc config.Service, tlsMode string) string 
 	}
 
 	// Default ports based on TLS mode
-	if tlsMode == "off" {
+	if tlsMode == constants.TLSModeOff {
 		return ":80"
 	}
 	return ":443"

@@ -7,11 +7,11 @@ import (
 	"context"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/docker/docker/client"
+	"github.com/jtdowney/tsbridge/test/integration/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,10 +24,7 @@ func TestDockerProviderIntegration(t *testing.T) {
 	}
 
 	// Build tsbridge binary for testing
-	binPath := filepath.Join(t.TempDir(), "tsbridge-test")
-	cmd := exec.Command("go", "build", "-o", binPath, "../../cmd/tsbridge")
-	err := cmd.Run()
-	require.NoError(t, err, "Failed to build test binary")
+	binPath := helpers.BuildTestBinary(t)
 
 	t.Run("docker provider starts with no services", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -110,10 +107,7 @@ func TestDockerProviderDynamicConfiguration(t *testing.T) {
 	defer cli.Close()
 
 	// Build tsbridge binary
-	binPath := filepath.Join(t.TempDir(), "tsbridge-test")
-	cmd := exec.Command("go", "build", "-o", binPath, "../../cmd/tsbridge")
-	err = cmd.Run()
-	require.NoError(t, err)
+	binPath := helpers.BuildTestBinary(t)
 
 	t.Run("container start triggers service addition", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -222,10 +216,7 @@ func TestDockerProviderLabelVariations(t *testing.T) {
 	}
 
 	// Build tsbridge binary
-	binPath := filepath.Join(t.TempDir(), "tsbridge-test")
-	cmd := exec.Command("go", "build", "-o", binPath, "../../cmd/tsbridge")
-	err := cmd.Run()
-	require.NoError(t, err)
+	binPath := helpers.BuildTestBinary(t)
 
 	t.Run("supports both enable and enabled labels", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -330,10 +321,7 @@ func TestDockerProviderLabelVariations(t *testing.T) {
 // TestDockerProviderErrorHandling tests error scenarios
 func TestDockerProviderErrorHandling(t *testing.T) {
 	// Build tsbridge binary
-	binPath := filepath.Join(t.TempDir(), "tsbridge-test")
-	cmd := exec.Command("go", "build", "-o", binPath, "../../cmd/tsbridge")
-	err := cmd.Run()
-	require.NoError(t, err)
+	binPath := helpers.BuildTestBinary(t)
 
 	t.Run("invalid docker socket", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -408,10 +396,7 @@ func isDockerAvailable() bool {
 // TestDockerProviderValidate tests validation with Docker provider
 func TestDockerProviderValidate(t *testing.T) {
 	// Build tsbridge binary
-	binPath := filepath.Join(t.TempDir(), "tsbridge-test")
-	cmd := exec.Command("go", "build", "-o", binPath, "../../cmd/tsbridge")
-	err := cmd.Run()
-	require.NoError(t, err)
+	binPath := helpers.BuildTestBinary(t)
 
 	t.Run("validate command with docker provider", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

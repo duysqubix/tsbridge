@@ -274,19 +274,12 @@ type ServiceStartupError struct {
 
 // Error implements the error interface
 func (e *ServiceStartupError) Error() string {
-	if e.Failed == e.Total {
-		// All services failed
-		var msg strings.Builder
-		fmt.Fprintf(&msg, "all %d services failed to start:", e.Total)
-		for service, err := range e.Failures {
-			fmt.Fprintf(&msg, "\n  - %s: %v", service, err)
-		}
-		return msg.String()
-	}
-
-	// Partial failure
 	var msg strings.Builder
-	fmt.Fprintf(&msg, "%d of %d services failed to start:", e.Failed, e.Total)
+	if e.Failed == e.Total {
+		fmt.Fprintf(&msg, "all %d services failed to start:", e.Total)
+	} else {
+		fmt.Fprintf(&msg, "%d of %d services failed to start:", e.Failed, e.Total)
+	}
 	for service, err := range e.Failures {
 		fmt.Fprintf(&msg, "\n  - %s: %v", service, err)
 	}

@@ -2,7 +2,7 @@
 package config
 
 import (
-	"reflect"
+	"maps"
 	"slices"
 	"time"
 
@@ -13,35 +13,12 @@ import (
 // This function is used to determine if a service needs to be restarted when configuration changes.
 // It compares all fields that would require a service restart if changed.
 func ServiceConfigEqual(a, b Service) bool {
-	// Custom comparer for string slices that:
-	// - Treats nil and empty slices as equal
-	// - For Tags field: ignores order
-	// - For other slice fields: requires exact order
-	stringSliceComparer := cmp.Comparer(func(x, y []string) bool {
-		// Treat nil and empty slices as equal
-		if len(x) == 0 && len(y) == 0 {
-			return true
-		}
-		// If lengths differ, they're not equal
-		if len(x) != len(y) {
-			return false
-		}
-		// For now, do exact comparison (order matters)
-		// The Tags field will be handled separately
-		return slices.Equal(x, y)
-	})
+	// Custom comparer for string slices where order matters.
+	// slices.Equal treats nil and empty slices as equal.
+	stringSliceComparer := cmp.Comparer(slices.Equal[[]string])
 
-	// Custom comparer for Tags field that ignores order
+	// Custom comparer for the Tags field that ignores order.
 	tagsComparer := cmp.Comparer(func(x, y []string) bool {
-		// Treat nil and empty slices as equal
-		if len(x) == 0 && len(y) == 0 {
-			return true
-		}
-		// If lengths differ, they're not equal
-		if len(x) != len(y) {
-			return false
-		}
-		// Sort copies of the slices to compare them without order
 		xCopy := slices.Clone(x)
 		yCopy := slices.Clone(y)
 		slices.Sort(xCopy)
@@ -49,15 +26,9 @@ func ServiceConfigEqual(a, b Service) bool {
 		return slices.Equal(xCopy, yCopy)
 	})
 
-	// Custom comparer for string maps that treats nil and empty maps as equal
-	stringMapComparer := cmp.Comparer(func(x, y map[string]string) bool {
-		// Treat nil and empty maps as equal
-		if len(x) == 0 && len(y) == 0 {
-			return true
-		}
-		// Otherwise use reflect.DeepEqual for map comparison
-		return reflect.DeepEqual(x, y)
-	})
+	// Custom comparer for string maps.
+	// maps.Equal treats nil and empty maps as equal.
+	stringMapComparer := cmp.Comparer(maps.Equal[map[string]string, map[string]string])
 
 	// Define comparison options
 	opts := []cmp.Option{
