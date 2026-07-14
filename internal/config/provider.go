@@ -1,12 +1,7 @@
 // Package config handles configuration parsing and validation for tsbridge.
 package config
 
-import (
-	"context"
-	"time"
-
-	"github.com/jtdowney/tsbridge/internal/errors"
-)
+import "context"
 
 // Provider defines the interface for configuration providers
 type Provider interface {
@@ -46,35 +41,4 @@ func (p *FileProvider) Watch(ctx context.Context) (<-chan *Config, error) {
 // Name returns the provider name
 func (p *FileProvider) Name() string {
 	return "file"
-}
-
-// DefaultRegistry is the global provider registry
-var DefaultRegistry = NewProviderRegistry()
-
-// NewProvider creates a provider based on the given type
-func NewProvider(providerType string, configPath string, dockerOpts DockerProviderOptions) (Provider, error) {
-	var opts any
-
-	switch providerType {
-	case "file":
-		opts = FileProviderOptions{Path: configPath}
-	case "docker":
-		opts = dockerOpts
-	default:
-		return nil, errors.NewValidationError("unknown provider type: " + providerType)
-	}
-
-	return DefaultRegistry.Get(providerType, opts)
-}
-
-// DockerProviderOptions contains options for the Docker provider
-type DockerProviderOptions struct {
-	DockerEndpoint string
-	LabelPrefix    string
-	PollInterval   time.Duration
-}
-
-// RegisterDockerProvider registers the Docker provider factory (deprecated - use registry)
-func RegisterDockerProvider(factory func(DockerProviderOptions) (Provider, error)) {
-	DefaultRegistry.Register("docker", DockerProviderFactory(factory))
 }

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/jtdowney/tsbridge/internal/app"
 	"github.com/jtdowney/tsbridge/internal/config"
+	"github.com/jtdowney/tsbridge/internal/docker"
+	tserrors "github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -15,7 +17,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"slices"
 	"strings"
 	"sync"
 	"syscall"
@@ -143,192 +144,6 @@ func TestExitFuncInSignalHandler(t *testing.T) {
 		assert.Contains(t, logBuf.String(), "shutdown error")
 	case <-time.After(time.Second):
 		t.Fatal("exitFunc was not called within timeout")
-	}
-}
-
-func TestRegisterProviders(t *testing.T) {
-	// Save original registry
-	originalRegistry := config.DefaultRegistry
-	defer func() { config.DefaultRegistry = originalRegistry }()
-
-	// Create a new registry for testing
-	testRegistry := config.NewProviderRegistry()
-	config.DefaultRegistry = testRegistry
-
-	// Call registerProviders
-	registerProviders()
-
-	// Verify both providers are registered
-	providers := testRegistry.List()
-	assert.Equal(t, 2, len(providers))
-
-	assert.True(t, slices.Contains(providers, "file"), "file provider should be registered")
-	assert.True(t, slices.Contains(providers, "docker"), "docker provider should be registered")
-
-	// Verify file provider works
-	fileProvider, err := testRegistry.Get("file", config.FileProviderOptions{Path: "/test/path"})
-	assert.Nil(t, err)
-	assert.NotNil(t, fileProvider)
-	assert.Equal(t, "file", fileProvider.Name())
-
-	// Verify docker provider factory is registered
-	provider, err := testRegistry.Get("docker", config.DockerProviderOptions{})
-
-	// The important thing is that the provider is registered, not whether it succeeds
-	// In CI environments, Docker might be available and creation could succeed
-	if err != nil {
-		// If there's an error, it should NOT be about the provider not being registered
-		assert.NotContains(t, err.Error(), "provider not registered")
-	} else {
-		// If it succeeds, verify we got a valid provider
-		assert.NotNil(t, provider)
-		assert.Equal(t, "docker", provider.Name())
-	}
-}
-
-// TestProviderRegistrationOnce verifies providers are registered only once
-func TestProviderRegistrationOnce(t *testing.T) {
-	// Save original registerProviders function
-	originalRegisterProviders := registerProviders
-	defer func() {
-		registerProviders = originalRegisterProviders
-	}()
-
-	// Track registration calls
-	registrationCalls := make(map[string]int)
-	var mu sync.Mutex
-
-	// Override registerProviders to track calls
-	registerProviders = func() {
-		mu.Lock()
-		defer mu.Unlock()
-
-		// Track file provider registration
-		registrationCalls["file"]++
-		config.DefaultRegistry.Register("file", config.FileProviderFactory)
-
-		// Track docker provider registration
-		registrationCalls["docker"]++
-		config.DefaultRegistry.Register("docker", config.DockerProviderFactory(func(opts config.DockerProviderOptions) (config.Provider, error) {
-			// Return a mock for testing
-			return config.NewFileProvider(""), nil
-		}))
-	}
-
-	// Create valid config file for test
-	configPath := filepath.Join(t.TempDir(), "test.toml")
-	configContent := `
-[tailscale]
-auth_key = "test-auth-key"
-
-[[services]]
-name = "test-service"
-backend_addr = "localhost:8080"
-`
-	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0644))
-
-	// Test validate mode (which should trigger duplicate registration issue)
-	args := &cliArgs{
-		validate:   true,
-		provider:   "file",
-		configPath: configPath,
-	}
-	sigCh := make(chan os.Signal, 1)
-
-	// Run should complete without error
-	err := run(args, sigCh)
-	assert.NoError(t, err)
-
-	// Verify each provider registered only once
-	for name, count := range registrationCalls {
-		assert.Equal(t, 1, count, "Provider %s registered %d times, expected 1", name, count)
-	}
-}
-
-// TestProviderRegistrationBothModes verifies providers are registered correctly in all modes
-func TestProviderRegistrationBothModes(t *testing.T) {
-	// Save originals
-	originalRegisterProviders := registerProviders
-	originalNewApp := newApp
-	defer func() {
-		registerProviders = originalRegisterProviders
-		newApp = originalNewApp
-	}()
-
-	// Create valid config file for test
-	configPath := filepath.Join(t.TempDir(), "test.toml")
-	configContent := `
-[tailscale]
-auth_key = "test-auth-key"
-
-[[services]]
-name = "test-service"
-backend_addr = "localhost:8080"
-`
-	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0644))
-
-	tests := []struct {
-		name string
-		args *cliArgs
-	}{
-		{
-			name: "validate mode",
-			args: &cliArgs{
-				validate:   true,
-				provider:   "file",
-				configPath: configPath,
-			},
-		},
-		{
-			name: "normal mode with help",
-			args: &cliArgs{
-				help:       true,
-				provider:   "file",
-				configPath: configPath,
-			},
-		},
-		{
-			name: "normal mode with version",
-			args: &cliArgs{
-				version:    true,
-				provider:   "file",
-				configPath: configPath,
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Reset tracking for each test
-			registerCalled := false
-			registerProviders = func() {
-				registerCalled = true
-				config.DefaultRegistry.Register("file", config.FileProviderFactory)
-				config.DefaultRegistry.Register("docker", config.DockerProviderFactory(func(opts config.DockerProviderOptions) (config.Provider, error) {
-					return config.NewFileProvider(""), nil
-				}))
-			}
-
-			// Mock app to prevent actual startup
-			newApp = func(cfg *config.Config, opts app.Options) (Application, error) {
-				return &mockApp{}, nil
-			}
-
-			sigCh := make(chan os.Signal, 1)
-
-			// Capture stdout for version/help output
-			oldStdout := os.Stdout
-			_, w, _ := os.Pipe()
-			os.Stdout = w
-
-			_ = run(tt.args, sigCh)
-
-			w.Close()
-			os.Stdout = oldStdout
-
-			// With the new implementation, registerProviders is always called once
-			assert.True(t, registerCalled, "registerProviders should always be called")
-		})
 	}
 }
 
@@ -1516,12 +1331,6 @@ backend_addr = "localhost:8080"
 
 // TestProviderLoadError tests handling of provider.Load() errors
 func TestProviderLoadError(t *testing.T) {
-	// Save original registry
-	originalRegistry := config.DefaultRegistry
-	defer func() { config.DefaultRegistry = originalRegistry }()
-
-	// Register providers
-	registerProviders()
 
 	// Test with non-existent config file
 	args := &cliArgs{
@@ -1557,29 +1366,6 @@ func TestValidateConfigWithLoadError(t *testing.T) {
 	err := validateConfig(args)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to load configuration")
-}
-
-// TestCreateProviderWithInvalidOptions tests provider creation with invalid options
-func TestCreateProviderWithInvalidOptions(t *testing.T) {
-	// Save original registry
-	originalRegistry := config.DefaultRegistry
-	defer func() { config.DefaultRegistry = originalRegistry }()
-
-	// Create a registry with a provider that always fails
-	testRegistry := config.NewProviderRegistry()
-	testRegistry.Register("failing", func(opts any) (config.Provider, error) {
-		return nil, fmt.Errorf("provider creation failed")
-	})
-	config.DefaultRegistry = testRegistry
-
-	args := &cliArgs{
-		provider: "failing",
-	}
-
-	provider, err := createProvider(args)
-	assert.Nil(t, provider)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to create configuration provider")
 }
 
 // TestMainInvalidConfig tests behavior with invalid configuration
@@ -1769,100 +1555,52 @@ func TestSetupLoggingOnce(t *testing.T) {
 
 // TestCreateProvider tests the createProvider function
 func TestCreateProvider(t *testing.T) {
-	// Save original registry
-	originalRegistry := config.DefaultRegistry
-	defer func() { config.DefaultRegistry = originalRegistry }()
-
-	// Register providers for testing
-	registerProviders()
-
-	tests := []struct {
-		name         string
-		args         *cliArgs
-		setupFunc    func(t *testing.T) string // returns config path if needed
-		wantProvider string
-		wantErr      bool
-		errContains  string
-	}{
-		{
-			name: "file provider with valid config path",
-			args: &cliArgs{
-				provider:   "file",
-				configPath: "test.toml",
-			},
-			setupFunc: func(t *testing.T) string {
-				configPath := filepath.Join(t.TempDir(), "test.toml")
-				configContent := `
-[tailscale]
-auth_key = "test-auth-key"
-
-[[services]]
-name = "test-service"
-backend_addr = "localhost:8080"
-`
-				err := os.WriteFile(configPath, []byte(configContent), 0644)
-				require.NoError(t, err)
-				return configPath
-			},
-			wantProvider: "file",
-		},
-		{
-			name: "docker provider",
-			args: &cliArgs{
-				provider:       "docker",
-				dockerEndpoint: "unix:///var/run/docker.sock",
-				labelPrefix:    "tsbridge",
-			},
-			wantProvider: "docker",
-		},
-		{
-			name: "invalid provider",
-			args: &cliArgs{
-				provider: "invalid",
-			},
-			wantErr:     true,
-			errContains: "unknown provider type",
-		},
-		{
-			name: "file provider without config path",
-			args: &cliArgs{
-				provider:   "file",
-				configPath: "",
-			},
-			wantProvider: "file",
-			// Should still create provider, error happens on Load
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Run setup function if provided
-			if tt.setupFunc != nil {
-				configPath := tt.setupFunc(t)
-				tt.args.configPath = configPath
-			}
-
-			// Create provider
-			provider, err := createProvider(tt.args)
-
-			if tt.wantErr {
-				assert.Error(t, err)
-				if tt.errContains != "" {
-					assert.Contains(t, err.Error(), tt.errContains)
-				}
-				return
-			}
-
-			// For docker provider, it might fail in CI environments
-			if tt.args.provider == "docker" && err != nil {
-				// If docker fails, just check it's not a "provider not registered" error
-				assert.NotContains(t, err.Error(), "provider not registered")
-				return
-			}
-
-			require.NoError(t, err)
-			assert.NotNil(t, provider)
-			assert.Equal(t, tt.wantProvider, provider.Name())
+	t.Run("creates file provider without Docker", func(t *testing.T) {
+		dockerCalled := false
+		provider, err := createProvider(&cliArgs{
+			provider:   "file",
+			configPath: "test.toml",
+		}, func(docker.Options) (config.Provider, error) {
+			dockerCalled = true
+			return nil, nil
 		})
-	}
+
+		require.NoError(t, err)
+		assert.Equal(t, "file", provider.Name())
+		assert.False(t, dockerCalled)
+	})
+
+	t.Run("forwards Docker options to constructor", func(t *testing.T) {
+		wantProvider := config.NewFileProvider("marker")
+		wantOptions := docker.Options{
+			DockerEndpoint: "unix:///custom/docker.sock",
+			LabelPrefix:    "custom",
+			PollInterval:   5 * time.Second,
+		}
+
+		provider, err := createProvider(&cliArgs{
+			provider:           "docker",
+			dockerEndpoint:     wantOptions.DockerEndpoint,
+			labelPrefix:        wantOptions.LabelPrefix,
+			dockerPollInterval: wantOptions.PollInterval,
+		}, func(got docker.Options) (config.Provider, error) {
+			assert.Equal(t, wantOptions, got)
+			return wantProvider, nil
+		})
+
+		require.NoError(t, err)
+		assert.Same(t, wantProvider, provider)
+	})
+
+	t.Run("rejects unknown provider as validation error", func(t *testing.T) {
+		provider, err := createProvider(&cliArgs{provider: "unknown"}, func(docker.Options) (config.Provider, error) {
+			t.Fatal("Docker constructor must not be called")
+			return nil, nil
+		})
+
+		assert.Nil(t, provider)
+		require.Error(t, err)
+		assert.True(t, tserrors.IsValidation(err))
+		assert.ErrorContains(t, err, "unknown provider type: unknown")
+	})
 }

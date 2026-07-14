@@ -17,6 +17,7 @@ import (
 	"github.com/jtdowney/tsbridge/internal/config"
 	"github.com/jtdowney/tsbridge/internal/constants"
 	"github.com/jtdowney/tsbridge/internal/docker"
+	tserrors "github.com/jtdowney/tsbridge/internal/errors"
 )
 
 var version = "dev"
@@ -26,21 +27,6 @@ var exitFunc = os.Exit
 
 // loggingOnce ensures setupLogging is only called once
 var loggingOnce = &sync.Once{}
-
-// registerProviders explicitly registers all available providers
-var registerProviders = func() {
-	// Register file provider
-	config.DefaultRegistry.Register("file", config.FileProviderFactory)
-
-	// Register docker provider
-	config.DefaultRegistry.Register("docker", config.DockerProviderFactory(func(opts config.DockerProviderOptions) (config.Provider, error) {
-		return docker.NewProvider(docker.Options{
-			DockerEndpoint: opts.DockerEndpoint,
-			LabelPrefix:    opts.LabelPrefix,
-			PollInterval:   opts.PollInterval,
-		})
-	}))
-}
 
 // cliArgs holds parsed command-line arguments
 type cliArgs struct {
@@ -121,18 +107,36 @@ func setupCommon(args *cliArgs) error {
 }
 
 // createProvider creates a configuration provider based on the CLI arguments
-func createProvider(args *cliArgs) (config.Provider, error) {
-	dockerOpts := config.DockerProviderOptions{
-		DockerEndpoint: args.dockerEndpoint,
-		LabelPrefix:    args.labelPrefix,
-		PollInterval:   args.dockerPollInterval,
+func createProvider(
+	args *cliArgs,
+	newDockerProvider func(docker.Options) (config.Provider, error),
+) (config.Provider, error) {
+	var (
+		provider config.Provider
+		err      error
+	)
+
+	switch args.provider {
+	case "file":
+		provider = config.NewFileProvider(args.configPath)
+	case "docker":
+		provider, err = newDockerProvider(docker.Options{
+			DockerEndpoint: args.dockerEndpoint,
+			LabelPrefix:    args.labelPrefix,
+			PollInterval:   args.dockerPollInterval,
+		})
+	default:
+		err = tserrors.NewValidationError("unknown provider type: " + args.provider)
 	}
 
-	provider, err := config.NewProvider(args.provider, args.configPath, dockerOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create configuration provider: %w", err)
 	}
 	return provider, nil
+}
+
+func createDockerProvider(opts docker.Options) (config.Provider, error) {
+	return docker.NewProvider(opts)
 }
 
 // validateConfig validates the configuration and returns an error if invalid
@@ -145,7 +149,7 @@ func validateConfig(args *cliArgs) error {
 	slog.Debug("validating configuration", "provider", args.provider)
 
 	// Create configuration provider
-	configProvider, err := createProvider(args)
+	configProvider, err := createProvider(args, createDockerProvider)
 	if err != nil {
 		return err
 	}
@@ -180,8 +184,6 @@ var newApp = func(cfg *config.Config, opts app.Options) (Application, error) {
 
 // run executes the main application logic
 func run(args *cliArgs, sigCh <-chan os.Signal) error {
-	// Register all available providers once at the start
-	registerProviders()
 
 	if args.help {
 		flag.Usage()
@@ -206,7 +208,7 @@ func run(args *cliArgs, sigCh <-chan os.Signal) error {
 	slog.Info("starting tsbridge", "version", version, "provider", args.provider)
 
 	// Create configuration provider
-	configProvider, err := createProvider(args)
+	configProvider, err := createProvider(args, createDockerProvider)
 	if err != nil {
 		return err
 	}
