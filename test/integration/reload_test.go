@@ -11,7 +11,6 @@ import (
 
 	"github.com/jtdowney/tsbridge/internal/app"
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/jtdowney/tsbridge/internal/testutil"
 	"github.com/jtdowney/tsbridge/test/integration/helpers"
 	"github.com/stretchr/testify/assert"
@@ -259,19 +258,4 @@ func TestDynamicServiceManagement(t *testing.T) {
 		assert.NotNil(t, testApp)
 	})
 
-	t.Run("reload error handling returns detailed information", func(t *testing.T) {
-		// This test verifies that the ReloadError type provides useful information
-		reloadErr := errors.NewReloadError()
-		reloadErr.RecordAddError("svc1", assert.AnError)
-		reloadErr.RecordRemoveError("svc2", assert.AnError)
-		reloadErr.RecordUpdateError("svc3", assert.AnError)
-		reloadErr.RecordSuccess()
-		reloadErr.RecordSuccess()
-
-		assert.True(t, reloadErr.HasErrors())
-		assert.False(t, reloadErr.AllFailed())
-		assert.Equal(t, 3, reloadErr.Failed)
-		assert.Equal(t, 2, reloadErr.Successful)
-		assert.Contains(t, reloadErr.Error(), "3 errors, 2 successful")
-	})
 }

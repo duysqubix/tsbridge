@@ -19,6 +19,7 @@ type mockServiceRegistry struct {
 	addServiceCalls    []config.Service
 	removeServiceCalls []string
 	updateServiceCalls []updateCall
+	operationCalls     []string
 }
 
 type updateCall struct {
@@ -36,6 +37,7 @@ func newMockServiceRegistry() *mockServiceRegistry {
 }
 
 func (m *mockServiceRegistry) AddService(svcCfg config.Service) error {
+	m.operationCalls = append(m.operationCalls, "add:"+svcCfg.Name)
 	m.addServiceCalls = append(m.addServiceCalls, svcCfg)
 	if m.addServiceError != nil {
 		return m.addServiceError
@@ -45,6 +47,7 @@ func (m *mockServiceRegistry) AddService(svcCfg config.Service) error {
 }
 
 func (m *mockServiceRegistry) RemoveService(name string) error {
+	m.operationCalls = append(m.operationCalls, "remove:"+name)
 	m.removeServiceCalls = append(m.removeServiceCalls, name)
 	if m.removeServiceError != nil {
 		return m.removeServiceError
@@ -54,6 +57,7 @@ func (m *mockServiceRegistry) RemoveService(name string) error {
 }
 
 func (m *mockServiceRegistry) UpdateService(name string, newCfg config.Service) error {
+	m.operationCalls = append(m.operationCalls, "update:"+name)
 	m.updateServiceCalls = append(m.updateServiceCalls, updateCall{name: name, config: newCfg})
 	if m.updateServiceError != nil {
 		return m.updateServiceError
@@ -208,6 +212,36 @@ func TestReloadConfigWithRegistry_WithErrors(t *testing.T) {
 
 		})
 	}
+}
+
+func TestReloadConfigWithRegistry_JoinsFailuresWithOperationContext(t *testing.T) {
+	removeErr := errors.New("remove failed")
+	addErr := errors.New("add failed")
+	updateErr := errors.New("update failed")
+	registry := newMockServiceRegistry()
+	registry.removeServiceError = removeErr
+	registry.addServiceError = addErr
+	registry.updateServiceError = updateErr
+
+	oldCfg := &config.Config{Services: []config.Service{
+		{Name: "remove-me", BackendAddr: "http://localhost:8001"},
+		{Name: "update-me", BackendAddr: "http://localhost:8002"},
+	}}
+	newCfg := &config.Config{Services: []config.Service{
+		{Name: "update-me", BackendAddr: "http://localhost:8022"},
+		{Name: "add-me", BackendAddr: "http://localhost:8003"},
+	}}
+
+	err := reloadConfigWithRegistry(oldCfg, newCfg, registry)
+
+	require.Error(t, err)
+	assert.ErrorIs(t, err, removeErr)
+	assert.ErrorIs(t, err, addErr)
+	assert.ErrorIs(t, err, updateErr)
+	assert.ErrorContains(t, err, `remove service "remove-me"`)
+	assert.ErrorContains(t, err, `add service "add-me"`)
+	assert.ErrorContains(t, err, `update service "update-me"`)
+	assert.Equal(t, []string{"remove:remove-me", "add:add-me", "update:update-me"}, registry.operationCalls)
 }
 
 func TestReloadConfigWithRegistry_PartialFailure(t *testing.T) {

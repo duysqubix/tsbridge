@@ -1,10 +1,11 @@
 package app
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/errors"
 )
 
 // serviceRegistryOps is the minimal interface for dynamic config reloads.
@@ -17,7 +18,7 @@ type serviceRegistryOps interface {
 
 // reloadConfigWithRegistry reloads services in the registry to match newCfg.
 // Removes, adds, and updates services as needed, in that order.
-// Continues on errors and returns a ReloadError if any occur.
+// Continues on errors and joins every failure in the returned error.
 func reloadConfigWithRegistry(oldCfg, newCfg *config.Config, registry serviceRegistryOps) error {
 	toRemove := findServicesToRemove(oldCfg, newCfg)
 	toAdd := findServicesToAdd(oldCfg, newCfg)
@@ -33,7 +34,11 @@ func reloadConfigWithRegistry(oldCfg, newCfg *config.Config, registry serviceReg
 		return nil
 	}
 
-	reloadErr := errors.NewReloadError()
+	var failures []error
+	successful := 0
+	removeFailures := 0
+	addFailures := 0
+	updateFailures := 0
 
 	for _, name := range toRemove {
 		if err := registry.RemoveService(name); err != nil {
@@ -41,12 +46,13 @@ func reloadConfigWithRegistry(oldCfg, newCfg *config.Config, registry serviceReg
 				"service", name,
 				"error", err,
 				"operation", "reload_remove")
-			reloadErr.RecordRemoveError(name, err)
+			failures = append(failures, fmt.Errorf("remove service %q: %w", name, err))
+			removeFailures++
 		} else {
 			slog.Info("removed service during reload",
 				"service", name,
 				"operation", "reload_remove")
-			reloadErr.RecordSuccess()
+			successful++
 		}
 	}
 
@@ -57,13 +63,14 @@ func reloadConfigWithRegistry(oldCfg, newCfg *config.Config, registry serviceReg
 				"error", err,
 				"operation", "reload_add",
 				"backend", svc.BackendAddr)
-			reloadErr.RecordAddError(svc.Name, err)
+			failures = append(failures, fmt.Errorf("add service %q: %w", svc.Name, err))
+			addFailures++
 		} else {
 			slog.Info("added service during reload",
 				"service", svc.Name,
 				"operation", "reload_add",
 				"backend", svc.BackendAddr)
-			reloadErr.RecordSuccess()
+			successful++
 		}
 	}
 
@@ -74,27 +81,28 @@ func reloadConfigWithRegistry(oldCfg, newCfg *config.Config, registry serviceReg
 				"error", err,
 				"operation", "reload_update",
 				"backend", svc.BackendAddr)
-			reloadErr.RecordUpdateError(svc.Name, err)
+			failures = append(failures, fmt.Errorf("update service %q: %w", svc.Name, err))
+			updateFailures++
 		} else {
 			slog.Info("updated service during reload",
 				"service", svc.Name,
 				"operation", "reload_update",
 				"backend", svc.BackendAddr)
-			reloadErr.RecordSuccess()
+			successful++
 		}
 	}
 
-	if reloadErr.HasErrors() {
+	if len(failures) > 0 {
 		slog.Warn("configuration reload completed with errors",
-			"successful_operations", reloadErr.Successful,
-			"failed_operations", reloadErr.Failed,
-			"add_errors", len(reloadErr.AddErrors),
-			"remove_errors", len(reloadErr.RemoveErrors),
-			"update_errors", len(reloadErr.UpdateErrors))
+			"successful_operations", successful,
+			"failed_operations", len(failures),
+			"add_errors", addFailures,
+			"remove_errors", removeFailures,
+			"update_errors", updateFailures)
 	} else {
 		slog.Info("configuration reload completed successfully",
-			"operations", reloadErr.Successful)
+			"operations", successful)
 	}
 
-	return reloadErr.ToError()
+	return errors.Join(failures...)
 }
