@@ -62,7 +62,6 @@ func Whois(client WhoisClient, enabled bool, timeout time.Duration, cacheSize in
 }
 
 func performWhoisWithRetryLogic(client WhoisClient, timeout time.Duration, r *http.Request) (*apitype.WhoIsResponse, error) {
-	// Configure exponential backoff with attempt limit
 	b := backoff.NewExponentialBackOff()
 	b.InitialInterval = constants.RetryInitialInterval
 	b.MaxInterval = constants.RetryMaxInterval
@@ -70,10 +69,7 @@ func performWhoisWithRetryLogic(client WhoisClient, timeout time.Duration, r *ht
 	b.Multiplier = constants.RetryMultiplier
 	b.RandomizationFactor = constants.RetryRandomizationFactor
 
-	// Limit to 3 attempts using WithMaxRetries
-	backoffWithRetries := backoff.WithMaxRetries(b, constants.RetryMaxAttempts) // 2 retries = 3 total attempts
-
-	// Use context-aware backoff
+	backoffWithRetries := backoff.WithMaxRetries(b, constants.RetryMaxAttempts)
 	ctxBackoff := backoff.WithContext(backoffWithRetries, r.Context())
 
 	var response *apitype.WhoIsResponse
@@ -84,17 +80,16 @@ func performWhoisWithRetryLogic(client WhoisClient, timeout time.Duration, r *ht
 		var err error
 		response, err = client.WhoIs(ctx, r.RemoteAddr)
 
-		// Only retry on context errors (timeouts, cancellation) and certain network errors
-		if err != nil && isWhoisRetryableError(err) {
+		switch {
+		case err == nil:
+			return nil
+		case isWhoisRetryableError(err):
+			// Retry context errors (timeouts, cancellation) and certain network errors.
 			return err
-		}
-
-		// Don't retry on other errors (authentication, permanent failures, etc.)
-		if err != nil {
+		default:
+			// Don't retry authentication or other permanent failures.
 			return backoff.Permanent(err)
 		}
-
-		return nil
 	}
 
 	err := backoff.Retry(operation, ctxBackoff)

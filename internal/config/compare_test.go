@@ -435,6 +435,17 @@ func TestServiceConfigEqual(t *testing.T) {
 	}
 }
 
+// durationPtrEqual compares two time.Duration pointers
+func durationPtrEqual(a, b *time.Duration) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return *a == *b
+}
+
 // TestServiceConfigEqualCoversAllFields uses reflection to ensure all fields
 // of the Service struct are compared in ServiceConfigEqual function.
 // This test prevents bugs when new fields are added but not included in comparison.

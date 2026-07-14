@@ -17,23 +17,18 @@ type requestIDKey struct{}
 // context and included in the response headers.
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Check if request already has a request ID
 		requestID := r.Header.Get("X-Request-ID")
 		if requestID == "" {
-			// Generate a new UUID
 			requestID = uuid.New().String()
-			// Add it to the request headers so downstream handlers can see it
+			// Expose the generated ID to downstream handlers.
 			r.Header.Set("X-Request-ID", requestID)
 		}
 
-		// Add request ID to context
 		ctx := context.WithValue(r.Context(), requestIDKey{}, requestID)
 		r = r.WithContext(ctx)
 
-		// Add request ID to response headers
 		w.Header().Set("X-Request-ID", requestID)
 
-		// Call the next handler
 		next.ServeHTTP(w, r)
 	})
 }

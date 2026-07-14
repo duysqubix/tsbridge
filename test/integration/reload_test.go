@@ -20,11 +20,11 @@ import (
 
 // stripScheme removes the http:// or https:// prefix from a URL
 func stripScheme(url string) string {
-	if strings.HasPrefix(url, "http://") {
-		return url[len("http://"):]
+	if after, ok := strings.CutPrefix(url, "http://"); ok {
+		return after
 	}
-	if strings.HasPrefix(url, "https://") {
-		return url[len("https://"):]
+	if after, ok := strings.CutPrefix(url, "https://"); ok {
+		return after
 	}
 	return url
 }
@@ -203,10 +203,10 @@ func TestDynamicServiceManagement(t *testing.T) {
 			"svc2": "localhost:9999", // Unreachable backend
 		})
 
-		// Reload configuration - should handle gracefully
-		err = testApp.ReloadConfig(newCfg)
-		// The exact error behavior depends on the implementation
-		// In this case, we just verify it completes without panic
+		// Reload configuration - should handle gracefully.
+		// The exact error behavior depends on the implementation; we
+		// just verify it completes without panic.
+		_ = testApp.ReloadConfig(newCfg)
 	})
 
 	t.Run("concurrent reloads are handled safely", func(t *testing.T) {

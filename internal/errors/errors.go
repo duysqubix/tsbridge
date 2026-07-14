@@ -62,96 +62,57 @@ func (e *Error) Unwrap() error {
 
 // NewValidationError creates a new validation error
 func NewValidationError(message string) error {
-	return &Error{
-		Type:    ErrTypeValidation,
-		Message: message,
-	}
+	return &Error{Type: ErrTypeValidation, Message: message}
 }
 
 // NewNetworkError creates a new network error
 func NewNetworkError(message string) error {
-	return &Error{
-		Type:    ErrTypeNetwork,
-		Message: message,
-	}
+	return &Error{Type: ErrTypeNetwork, Message: message}
 }
 
 // NewNetworkErrorWithStatus creates a new network error with HTTP status code
 func NewNetworkErrorWithStatus(message string, statusCode int) error {
-	return &Error{
-		Type:           ErrTypeNetwork,
-		Message:        message,
-		HTTPStatusCode: statusCode,
-	}
+	return &Error{Type: ErrTypeNetwork, Message: message, HTTPStatusCode: statusCode}
 }
 
 // NewConfigError creates a new configuration error
 func NewConfigError(message string) error {
-	return &Error{
-		Type:    ErrTypeConfig,
-		Message: message,
-	}
+	return &Error{Type: ErrTypeConfig, Message: message}
 }
 
 // NewResourceError creates a new resource error
 func NewResourceError(message string) error {
-	return &Error{
-		Type:    ErrTypeResource,
-		Message: message,
-	}
+	return &Error{Type: ErrTypeResource, Message: message}
 }
 
 // NewInternalError creates a new internal error
 func NewInternalError(message string) error {
-	return &Error{
-		Type:    ErrTypeInternal,
-		Message: message,
-	}
+	return &Error{Type: ErrTypeInternal, Message: message}
 }
 
 // WrapValidation wraps an error as a validation error
 func WrapValidation(err error, message string) error {
-	return &Error{
-		Type:    ErrTypeValidation,
-		Message: message,
-		Err:     err,
-	}
+	return &Error{Type: ErrTypeValidation, Message: message, Err: err}
 }
 
 // WrapNetwork wraps an error as a network error
 func WrapNetwork(err error, message string) error {
-	return &Error{
-		Type:    ErrTypeNetwork,
-		Message: message,
-		Err:     err,
-	}
+	return &Error{Type: ErrTypeNetwork, Message: message, Err: err}
 }
 
 // WrapConfig wraps an error as a configuration error
 func WrapConfig(err error, message string) error {
-	return &Error{
-		Type:    ErrTypeConfig,
-		Message: message,
-		Err:     err,
-	}
+	return &Error{Type: ErrTypeConfig, Message: message, Err: err}
 }
 
 // WrapResource wraps an error as a resource error
 func WrapResource(err error, message string) error {
-	return &Error{
-		Type:    ErrTypeResource,
-		Message: message,
-		Err:     err,
-	}
+	return &Error{Type: ErrTypeResource, Message: message, Err: err}
 }
 
 // WrapInternal wraps an error as an internal error
 func WrapInternal(err error, message string) error {
-	return &Error{
-		Type:    ErrTypeInternal,
-		Message: message,
-		Err:     err,
-	}
+	return &Error{Type: ErrTypeInternal, Message: message, Err: err}
 }
 
 // IsValidation checks if an error is a validation error
@@ -181,14 +142,7 @@ func IsInternal(err error) bool {
 
 // isType checks if an error is of a specific type
 func isType(err error, errType ErrorType) bool {
-	if err == nil {
-		return false
-	}
-	var e *Error
-	if errors.As(err, &e) {
-		return e.Type == errType
-	}
-	return false
+	return GetType(err) == errType
 }
 
 // GetType returns the error type for an error
@@ -228,8 +182,7 @@ type RetryableError struct {
 
 // Error implements the error interface
 func (r *RetryableError) Error() string {
-	base := r.Err.Error()
-	return fmt.Sprintf("%s (attempt %d/%d)", base, r.Attempt, r.MaxAttempts)
+	return fmt.Sprintf("%s (attempt %d/%d)", r.Err.Error(), r.Attempt, r.MaxAttempts)
 }
 
 // Unwrap allows errors.Is and errors.As to work

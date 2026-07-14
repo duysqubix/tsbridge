@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -13,8 +14,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"log/slog"
 
 	"github.com/jtdowney/tsbridge/internal/config"
 	"github.com/jtdowney/tsbridge/internal/constants"
@@ -302,6 +301,7 @@ func (s *Service) CreateHandler() (http.Handler, error) {
 	}
 
 	// Create proxy handler with unified configuration
+	insecureSkipVerify := s.Config.InsecureSkipVerify != nil && *s.Config.InsecureSkipVerify
 	handler, err := proxy.NewHandler(&proxy.HandlerConfig{
 		BackendAddr:        s.Config.BackendAddr,
 		TransportConfig:    transportConfig,
@@ -313,14 +313,14 @@ func (s *Service) CreateHandler() (http.Handler, error) {
 		RemoveUpstream:     s.Config.RemoveUpstream,
 		RemoveDownstream:   s.Config.RemoveDownstream,
 		FlushInterval:      s.Config.FlushInterval,
-		InsecureSkipVerify: s.Config.InsecureSkipVerify != nil && *s.Config.InsecureSkipVerify,
+		InsecureSkipVerify: insecureSkipVerify,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	// Log security warning if TLS verification is disabled
-	if s.Config.InsecureSkipVerify != nil && *s.Config.InsecureSkipVerify {
+	if insecureSkipVerify {
 		slog.Warn("TLS certificate verification disabled for service connection to backend",
 			"service", s.Config.Name,
 			"backend", s.Config.BackendAddr)
@@ -655,7 +655,7 @@ func (r *Registry) UpdateService(name string, newCfg config.Service) error {
 	oldConfig := oldSvc.Config
 
 	// Stop the old service
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), constants.ServiceStopTimeout)
 	defer cancel()
 
 	if err := oldSvc.Stop(ctx); err != nil {

@@ -44,21 +44,18 @@ func NewApp(cfg *config.Config) (*App, error) {
 
 // NewAppWithOptions creates a new App instance with custom options
 func NewAppWithOptions(cfg *config.Config, opts Options) (*App, error) {
-	// If a provider is given, use it to load config
 	if opts.Provider != nil {
-		ctx := context.Background()
-		loadedCfg, err := opts.Provider.Load(ctx)
+		loaded, err := opts.Provider.Load(context.Background())
 		if err != nil {
 			return nil, tserrors.WrapConfig(err, "failed to load config from provider")
 		}
-		cfg = loadedCfg
+		cfg = loaded
 	}
 
 	if cfg == nil {
 		return nil, tserrors.NewValidationError("config cannot be nil")
 	}
 
-	// Validate configuration
 	providerName := ""
 	if opts.Provider != nil {
 		providerName = opts.Provider.Name()
@@ -68,10 +65,8 @@ func NewAppWithOptions(cfg *config.Config, opts Options) (*App, error) {
 		return nil, err
 	}
 
-	// Use provided tsServer or create new one
 	tsServer := opts.TSServer
 	if tsServer == nil {
-		// Create tailscale server
 		slog.Debug("creating tailscale server")
 		var err error
 		tsServer, err = tailscale.NewServer(cfg.Tailscale)
@@ -80,10 +75,8 @@ func NewAppWithOptions(cfg *config.Config, opts Options) (*App, error) {
 		}
 	}
 
-	// Use provided registry or create new one
 	registry := opts.Registry
 	if registry == nil {
-		// Create service registry
 		registry = service.NewRegistry(cfg, tsServer)
 	}
 
@@ -94,7 +87,6 @@ func NewAppWithOptions(cfg *config.Config, opts Options) (*App, error) {
 		registry: registry,
 	}
 
-	// Setup metrics if configured
 	if cfg.Global.MetricsAddr != "" {
 		if err := app.setupMetrics(); err != nil {
 			// Clean up tsServer if metrics setup fails and we created it
@@ -122,7 +114,6 @@ func (a *App) setupMetrics() error {
 		return tserrors.WrapResource(err, "failed to register metrics")
 	}
 
-	// Set metrics collector on registry
 	a.registry.SetMetricsCollector(collector)
 
 	// Create metrics server (but don't start it yet)
@@ -152,7 +143,6 @@ func (a *App) Start(ctx context.Context) error {
 			}
 		}
 
-		// Start metrics server if configured
 		if a.metricsServer != nil {
 			slog.Debug("starting metrics server", "address", a.cfg.Global.MetricsAddr)
 			if err := a.metricsServer.Start(ctx); err != nil {
@@ -162,7 +152,6 @@ func (a *App) Start(ctx context.Context) error {
 			slog.Info("metrics server listening", "address", a.metricsServer.Addr())
 		}
 
-		// Start services
 		slog.Info("starting services")
 		if err := a.registry.StartServices(); err != nil {
 			// Check if this is a partial failure
@@ -204,36 +193,30 @@ func (a *App) Shutdown(ctx context.Context) error {
 func (a *App) performShutdown(ctx context.Context) error {
 	var errs []error
 
-	// Stop config watcher if running
 	if a.configWatcher != nil {
 		a.configWatcher()
 	}
 
-	// Shutdown services
 	if err := a.registry.Shutdown(ctx); err != nil {
 		// The error from Shutdown is already typed
 		slog.Error("failed to shutdown services", "error", err)
 		errs = append(errs, err)
 	}
 
-	// Shutdown metrics server if running
 	if a.metricsServer != nil {
 		if err := a.metricsServer.Shutdown(ctx); err != nil {
-			wrappedErr := tserrors.WrapInternal(err, "failed to shutdown metrics server")
 			slog.Error("failed to shutdown metrics server", "error", err)
-			errs = append(errs, wrappedErr)
+			errs = append(errs, tserrors.WrapInternal(err, "failed to shutdown metrics server"))
 		}
 	}
 
-	// Close tailscale server
 	if err := a.tsServer.Close(); err != nil {
-		// Check if it's a timeout error - log but don't fail shutdown
+		// Timeout on close is logged but does not fail shutdown
 		if tserrors.IsTimeout(err) {
 			slog.Warn("tailscale server close timed out but continuing shutdown", "error", err)
 		} else {
-			wrappedErr := tserrors.WrapResource(err, "failed to close tailscale server")
 			slog.Error("failed to close tailscale server", "error", err)
-			errs = append(errs, wrappedErr)
+			errs = append(errs, tserrors.WrapResource(err, "failed to close tailscale server"))
 		}
 	}
 
@@ -242,7 +225,6 @@ func (a *App) performShutdown(ctx context.Context) error {
 		return nil
 	}
 
-	// Combine all errors using errors.Join
 	return errors.Join(errs...)
 }
 
@@ -274,15 +256,11 @@ func (a *App) ReloadConfig(newCfg *config.Config) error {
 	defer a.mu.Unlock()
 
 	oldCfg := a.cfg
-
-	// Use the extracted reload logic
 	err := reloadConfigWithRegistry(oldCfg, newCfg, a.registry)
 
-	// Record reload metrics if collector is available
 	if a.registry != nil {
 		if collector := a.registry.GetMetricsCollector(); collector != nil {
-			success := err == nil
-			collector.RecordConfigReload(success, time.Since(start))
+			collector.RecordConfigReload(err == nil, time.Since(start))
 		}
 	}
 
@@ -335,7 +313,6 @@ func findServicesToUpdate(old, new *config.Config) []config.Service {
 	var toUpdate []config.Service
 	for _, newSvc := range new.Services {
 		if oldSvc, exists := oldServices[newSvc.Name]; exists {
-			// Compare configurations
 			if !config.ServiceConfigEqual(oldSvc, newSvc) {
 				toUpdate = append(toUpdate, newSvc)
 			}

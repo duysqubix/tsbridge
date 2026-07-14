@@ -27,15 +27,6 @@ import (
 	"github.com/jtdowney/tsbridge/internal/metrics"
 )
 
-// simpleHandler wraps an http.HandlerFunc to implement the Handler interface
-type simpleHandler struct {
-	http.HandlerFunc
-}
-
-func (h *simpleHandler) Close() error {
-	return nil
-}
-
 // defaultTestTransportConfig returns a TransportConfig with reasonable test defaults
 func defaultTestTransportConfig() *TransportConfig {
 	return &TransportConfig{
@@ -380,16 +371,7 @@ func TestProxyErrorHandling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create proxy handler
 			handler, err := newTestHandler(tt.backendAddr, defaultTestTransportConfig(), nil)
-			if tt.backendAddr == "not-a-valid-url" && err != nil {
-				// Expected error for invalid URL, create a simple handler that implements our interface
-				handler = &simpleHandler{
-					HandlerFunc: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-						http.Error(w, "Bad Gateway", http.StatusBadGateway)
-					}),
-				}
-			} else {
-				require.NoError(t, err)
-			}
+			require.NoError(t, err)
 
 			// Create test request
 			req := httptest.NewRequest("GET", "/", nil)
@@ -915,7 +897,6 @@ func (e mockNonTimeoutNetError) Temporary() bool { return false }
 // TestImprovedTimeoutDetection verifies that the proxy correctly identifies timeout errors
 // using type assertions instead of string matching
 func TestImprovedTimeoutDetection(t *testing.T) {
-
 	tests := []struct {
 		name       string
 		err        error
@@ -958,22 +939,12 @@ func TestImprovedTimeoutDetection(t *testing.T) {
 		},
 	}
 
+	handler, err := newTestHandler("http://example.com", defaultTestTransportConfig(), nil)
+	require.NoError(t, err)
+	h := handler.(*httpHandler)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create a simple backend that always succeeds
-			backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusOK)
-			}))
-			defer backend.Close()
-
-			// Create proxy handler
-			handler, err := newTestHandler(backend.URL, defaultTestTransportConfig(), nil)
-			require.NoError(t, err)
-
-			// Get the httpHandler to access the error handler
-			h := handler.(*httpHandler)
-
-			// Create test request and response recorder
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			w := httptest.NewRecorder()
 

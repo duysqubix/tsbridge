@@ -4,6 +4,7 @@ package testutil
 import (
 	"net"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/jtdowney/tsbridge/internal/config"
@@ -21,7 +22,7 @@ func CreateTestUnixSocket(t *testing.T) string {
 	require.NoError(t, err)
 	t.Cleanup(func() { os.RemoveAll(dir) })
 
-	socketPath := dir + "/s.sock"
+	socketPath := filepath.Join(dir, "s.sock")
 	listener, err := net.Listen("unix", socketPath)
 	require.NoError(t, err)
 	t.Cleanup(func() { listener.Close() })
@@ -53,7 +54,7 @@ func CreateMockTailscaleServer(t *testing.T, cfg config.Tailscale) *tailscale.Se
 		cfg.StateDir = t.TempDir()
 	}
 
-	factory := func(serviceName string) tsnet.TSNetServer {
+	factory := func(string) tsnet.TSNetServer {
 		return tsnet.NewMockTSNetServer()
 	}
 

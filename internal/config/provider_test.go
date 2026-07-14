@@ -211,7 +211,7 @@ oauth_client_secret = "test-secret"
 name = "test-service"
 # missing backend_addr
 `,
-			ExpectError: "backend_addr is required",
+			ExpectError: "backend address cannot be empty",
 		},
 		{
 			Name:        "duplicate_service_names",
@@ -888,6 +888,10 @@ tags = ["tag:test"]
 				// TODO: This should be a validation error
 				if errors.GetType(err) != errors.ErrTypeConfig {
 					t.Errorf("expected config error type, got %v", errors.GetType(err))
+				}
+
+				if !strings.Contains(err.Error(), errorFixture.ExpectError) {
+					t.Errorf("expected error containing %q, got %q", errorFixture.ExpectError, err.Error())
 				}
 			})
 		})

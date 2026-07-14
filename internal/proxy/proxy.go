@@ -102,9 +102,9 @@ func NewHandler(cfg *HandlerConfig) (Handler, error) {
 	}
 
 	// Create reverse proxy with Rewrite function
-	flushInterval := time.Duration(0)
-	if cfg.FlushInterval != nil {
-		flushInterval = *cfg.FlushInterval
+	var flushInterval time.Duration
+	if h.flushInterval != nil {
+		flushInterval = *h.flushInterval
 	}
 	h.proxy = &httputil.ReverseProxy{
 		Rewrite:       createProxyRewrite(h, target),

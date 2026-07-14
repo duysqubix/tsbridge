@@ -18,29 +18,12 @@ type TestFixture struct {
 func NewTestFixture(t *testing.T) *TestFixture {
 	t.Helper()
 
+	cfg := baseTestConfig(t)
+	cfg.Services = []config.Service{defaultService("test-service", "localhost:8080")}
+
 	return &TestFixture{
-		t: t,
-		cfg: &config.Config{
-			Tailscale: config.Tailscale{
-				AuthKey:  config.RedactedString("tskey-auth-test123"),
-				StateDir: t.TempDir(),
-			},
-			Global: config.Global{
-				MetricsAddr:       "localhost:0",
-				ReadHeaderTimeout: new(30 * time.Second),
-				WriteTimeout:      new(30 * time.Second),
-				IdleTimeout:       new(120 * time.Second),
-				ShutdownTimeout:   new(10 * time.Second),
-			},
-			Services: []config.Service{
-				{
-					Name:         "test-service",
-					BackendAddr:  "localhost:8080",
-					TLSMode:      "off",
-					WhoisEnabled: new(false),
-				},
-			},
-		},
+		t:   t,
+		cfg: cfg,
 	}
 }
 
@@ -55,12 +38,7 @@ func (f *TestFixture) WithService(name, backendAddr string) *TestFixture {
 	}
 
 	// Add new service
-	f.cfg.Services = append(f.cfg.Services, config.Service{
-		Name:         name,
-		BackendAddr:  backendAddr,
-		TLSMode:      "off",
-		WhoisEnabled: new(false),
-	})
+	f.cfg.Services = append(f.cfg.Services, defaultService(name, backendAddr))
 	return f
 }
 

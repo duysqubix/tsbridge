@@ -4,7 +4,6 @@ package config
 import (
 	"maps"
 	"slices"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -50,15 +49,4 @@ func ServiceConfigEqual(a, b Service) bool {
 
 	// Use go-cmp to perform deep equality check with our options
 	return cmp.Equal(a, b, opts...)
-}
-
-// durationPtrEqual compares two time.Duration pointers
-func durationPtrEqual(a, b *time.Duration) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if a == nil || b == nil {
-		return false
-	}
-	return *a == *b
 }

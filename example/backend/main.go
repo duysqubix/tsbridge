@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -38,7 +39,7 @@ func main() {
 		// Check for Tailscale headers
 		tailscaleHeaders := make(map[string][]string)
 		for name, values := range r.Header {
-			if len(name) > 11 && name[:11] == "X-Tailscale" {
+			if strings.HasPrefix(name, "X-Tailscale") {
 				tailscaleHeaders[name] = values
 			}
 		}

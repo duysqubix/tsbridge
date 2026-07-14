@@ -36,12 +36,11 @@ type Server struct {
 // NewServerWithFactory creates a new tailscale server instance with a custom TSNetServer factory
 func NewServerWithFactory(cfg config.Tailscale, factory tsnetpkg.TSNetServerFactory) (*Server, error) {
 	// Validate OAuth credentials if provided - both must be present or neither
-	if (cfg.OAuthClientID != "" && cfg.OAuthClientSecret == "") ||
-		(cfg.OAuthClientID == "" && cfg.OAuthClientSecret != "") {
-		if cfg.OAuthClientID == "" {
-			return nil, tserrors.NewConfigError("OAuth client secret provided without client ID")
-		}
+	if cfg.OAuthClientID != "" && cfg.OAuthClientSecret == "" {
 		return nil, tserrors.NewConfigError("OAuth client ID provided without client secret")
+	}
+	if cfg.OAuthClientID == "" && cfg.OAuthClientSecret != "" {
+		return nil, tserrors.NewConfigError("OAuth client secret provided without client ID")
 	}
 
 	return &Server{
@@ -136,10 +135,8 @@ func (s *Server) resolveBaseStateDir() (string, string) {
 	stateDirSource := "config"
 	if stateDir == "" {
 		stateDir = os.Getenv("STATE_DIRECTORY")
-		if stateDir != "" && strings.Contains(stateDir, ":") {
-			stateDir = strings.Split(stateDir, ":")[0]
-		}
 		if stateDir != "" {
+			stateDir, _, _ = strings.Cut(stateDir, ":")
 			stateDirSource = "STATE_DIRECTORY env"
 		}
 	}

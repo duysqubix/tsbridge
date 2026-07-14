@@ -75,25 +75,26 @@ func NewRealTSNetServer(serviceName string) *RealTSNetServer {
 	return server
 }
 
-// Listen implements TSNetServer.
-func (s *RealTSNetServer) Listen(network, addr string) (net.Listener, error) {
+// listenWithLog runs a tsnet listen operation, emitting debug logs for the
+// call and its outcome. op names the operation (e.g. "Listen") for log messages.
+func (s *RealTSNetServer) listenWithLog(op, network, addr string, listen func(network, addr string) (net.Listener, error)) (net.Listener, error) {
 	start := time.Now()
-	slog.Debug("tsnet Listen() called",
+	slog.Debug("tsnet "+op+"() called",
 		"hostname", s.Hostname,
 		"network", network,
 		"addr", addr,
 	)
 
-	listener, err := s.Server.Listen(network, addr)
+	listener, err := listen(network, addr)
 
 	if err != nil {
-		slog.Debug("tsnet Listen() failed",
+		slog.Debug("tsnet "+op+"() failed",
 			"hostname", s.Hostname,
 			"duration", time.Since(start),
 			"error", err,
 		)
 	} else {
-		slog.Debug("tsnet Listen() succeeded",
+		slog.Debug("tsnet "+op+"() succeeded",
 			"hostname", s.Hostname,
 			"duration", time.Since(start),
 			"listener_addr", listener.Addr(),
@@ -101,62 +102,23 @@ func (s *RealTSNetServer) Listen(network, addr string) (net.Listener, error) {
 	}
 
 	return listener, err
+}
+
+// Listen implements TSNetServer.
+func (s *RealTSNetServer) Listen(network, addr string) (net.Listener, error) {
+	return s.listenWithLog("Listen", network, addr, s.Server.Listen)
 }
 
 // ListenTLS implements TSNetServer.
 func (s *RealTSNetServer) ListenTLS(network, addr string) (net.Listener, error) {
-	start := time.Now()
-	slog.Debug("tsnet ListenTLS() called",
-		"hostname", s.Hostname,
-		"network", network,
-		"addr", addr,
-	)
-
-	listener, err := s.Server.ListenTLS(network, addr)
-
-	if err != nil {
-		slog.Debug("tsnet ListenTLS() failed",
-			"hostname", s.Hostname,
-			"duration", time.Since(start),
-			"error", err,
-		)
-	} else {
-		slog.Debug("tsnet ListenTLS() succeeded",
-			"hostname", s.Hostname,
-			"duration", time.Since(start),
-			"listener_addr", listener.Addr(),
-		)
-	}
-
-	return listener, err
+	return s.listenWithLog("ListenTLS", network, addr, s.Server.ListenTLS)
 }
 
 // ListenFunnel implements TSNetServer.
 func (s *RealTSNetServer) ListenFunnel(network, addr string) (net.Listener, error) {
-	start := time.Now()
-	slog.Debug("tsnet ListenFunnel() called",
-		"hostname", s.Hostname,
-		"network", network,
-		"addr", addr,
-	)
-
-	listener, err := s.Server.ListenFunnel(network, addr)
-
-	if err != nil {
-		slog.Debug("tsnet ListenFunnel() failed",
-			"hostname", s.Hostname,
-			"duration", time.Since(start),
-			"error", err,
-		)
-	} else {
-		slog.Debug("tsnet ListenFunnel() succeeded",
-			"hostname", s.Hostname,
-			"duration", time.Since(start),
-			"listener_addr", listener.Addr(),
-		)
-	}
-
-	return listener, err
+	return s.listenWithLog("ListenFunnel", network, addr, func(network, addr string) (net.Listener, error) {
+		return s.Server.ListenFunnel(network, addr)
+	})
 }
 
 // Close implements TSNetServer.

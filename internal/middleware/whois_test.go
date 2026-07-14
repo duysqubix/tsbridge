@@ -5,16 +5,30 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"testing"
 	"time"
-
-	"net/netip"
 
 	"github.com/jtdowney/tsbridge/internal/constants"
 	"github.com/stretchr/testify/assert"
 	"tailscale.com/client/tailscale/apitype"
 	"tailscale.com/tailcfg"
 )
+
+// spoofedTailscaleHeaders are attacker-supplied X-Tailscale-* headers used to
+// verify the middleware strips them before trusting whois results.
+var spoofedTailscaleHeaders = map[string]string{
+	"X-Tailscale-User":            "admin@company.com",
+	"X-Tailscale-Login":           "admin@company.com",
+	"X-Tailscale-Name":            "Admin User",
+	"X-Tailscale-Profile-Picture": "https://evil.com/pic.jpg",
+	"X-Tailscale-Addresses":       "100.64.0.99",
+}
+
+var allTailscaleHeaders = []string{
+	"X-Tailscale-User", "X-Tailscale-Login", "X-Tailscale-Name",
+	"X-Tailscale-Profile-Picture", "X-Tailscale-Addresses",
+}
 
 // MockWhoisClient simulates tsnet.Server's WhoIs functionality
 type MockWhoisClient struct {
@@ -647,18 +661,7 @@ func TestWhois_HandlesPartialResponse(t *testing.T) {
 }
 
 func TestStripTailscaleHeaders(t *testing.T) {
-	spoofedHeaders := map[string]string{
-		"X-Tailscale-User":            "admin@company.com",
-		"X-Tailscale-Login":           "admin@company.com",
-		"X-Tailscale-Name":            "Admin User",
-		"X-Tailscale-Profile-Picture": "https://evil.com/pic.jpg",
-		"X-Tailscale-Addresses":       "100.64.0.99",
-	}
-
-	allTailscaleHeaders := []string{
-		"X-Tailscale-User", "X-Tailscale-Login", "X-Tailscale-Name",
-		"X-Tailscale-Profile-Picture", "X-Tailscale-Addresses",
-	}
+	spoofedHeaders := spoofedTailscaleHeaders
 
 	t.Run("strips all X-Tailscale-* headers", func(t *testing.T) {
 		var capturedHeaders http.Header
@@ -761,18 +764,7 @@ func TestStripTailscaleHeaders(t *testing.T) {
 }
 
 func TestStripTailscaleHeadersWithWhois(t *testing.T) {
-	spoofedHeaders := map[string]string{
-		"X-Tailscale-User":            "admin@company.com",
-		"X-Tailscale-Login":           "admin@company.com",
-		"X-Tailscale-Name":            "Admin User",
-		"X-Tailscale-Profile-Picture": "https://evil.com/pic.jpg",
-		"X-Tailscale-Addresses":       "100.64.0.99",
-	}
-
-	allTailscaleHeaders := []string{
-		"X-Tailscale-User", "X-Tailscale-Login", "X-Tailscale-Name",
-		"X-Tailscale-Profile-Picture", "X-Tailscale-Addresses",
-	}
+	spoofedHeaders := spoofedTailscaleHeaders
 
 	tests := []struct {
 		name      string

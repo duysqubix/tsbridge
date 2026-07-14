@@ -17,7 +17,7 @@ type contextKey struct{}
 // be used as http.Server.ConnContext.
 func ConnContext(ctx context.Context, c net.Conn) context.Context {
 	if src, ok := extractFunnelSrc(c); ok {
-		return context.WithValue(ctx, contextKey{}, src)
+		return WithSourceAddr(ctx, src)
 	}
 	return ctx
 }

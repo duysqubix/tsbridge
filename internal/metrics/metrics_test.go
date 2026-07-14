@@ -39,11 +39,7 @@ func TestCollectorRegistration(t *testing.T) {
 	t.Run("registers metrics with prometheus", func(t *testing.T) {
 		reg := prometheus.NewRegistry()
 		c := NewCollector()
-
-		err := c.Register(reg)
-		if err != nil {
-			t.Fatalf("failed to register metrics: %v", err)
-		}
+		require.NoError(t, c.Register(reg))
 
 		// Increment metrics to ensure they show up in gather
 		c.RequestsTotal.WithLabelValues("test", "200").Inc()
@@ -141,10 +137,7 @@ func TestMiddleware(t *testing.T) {
 			// Create a test registry and collector
 			reg := prometheus.NewRegistry()
 			c := NewCollector()
-			err := c.Register(reg)
-			if err != nil {
-				t.Fatalf("failed to register metrics: %v", err)
-			}
+			require.NoError(t, c.Register(reg))
 
 			// Create test handler
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -284,10 +277,7 @@ func TestRecordError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			reg := prometheus.NewRegistry()
 			c := NewCollector()
-			err := c.Register(reg)
-			if err != nil {
-				t.Fatalf("failed to register metrics: %v", err)
-			}
+			require.NoError(t, c.Register(reg))
 
 			// Record error
 			c.RecordError(tt.service, tt.errorType)

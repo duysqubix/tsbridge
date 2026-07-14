@@ -132,7 +132,6 @@ func createProvider(args *cliArgs) (config.Provider, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create configuration provider: %w", err)
 	}
-
 	return provider, nil
 }
 

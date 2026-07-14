@@ -290,7 +290,7 @@ func byteSizeDecodeHook() mapstructure.DecodeHookFuncType {
 func containsByteSizeUnit(s string) bool {
 	s = strings.ToUpper(strings.TrimSpace(s))
 	// Check for byte size units (but not time units)
-	units := []string{"B", "BYTE", "BYTES", "KB", "KIB", "MB", "MIB", "GB", "GIB", "TB", "TIB", "PB", "PIB"}
+	units := []string{"B", "BYTE", "BYTES", "KB", "KIB", "MB", "MIB", "GB", "GIB", "TB", "TIB"}
 	for _, unit := range units {
 		if strings.HasSuffix(s, unit) {
 			return true

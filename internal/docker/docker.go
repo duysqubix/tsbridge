@@ -198,13 +198,13 @@ func (p *Provider) Load(ctx context.Context) (*config.Config, error) {
 	slog.Debug("found service containers", "count", len(serviceContainers))
 
 	// Parse service configurations
-	for _, container := range serviceContainers {
+	for _, c := range serviceContainers {
 		containerName := ""
-		if len(container.Names) > 0 {
-			containerName = container.Names[0]
+		if len(c.Names) > 0 {
+			containerName = c.Names[0]
 		}
 
-		svc, err := p.parseServiceConfig(container)
+		svc, err := p.parseServiceConfig(c)
 		if err != nil {
 			slog.Warn("failed to parse service configuration",
 				"container", containerName,
@@ -371,6 +371,8 @@ func (p *Provider) handleContainerEvent(ctx context.Context, configCh chan<- *co
 		return false
 	}
 
+	containerName := event.Actor.Attributes["name"]
+
 	containerID := event.Actor.ID
 	if len(containerID) > 12 {
 		containerID = containerID[:12]
@@ -378,7 +380,7 @@ func (p *Provider) handleContainerEvent(ctx context.Context, configCh chan<- *co
 
 	slog.Debug("Docker container event received",
 		"action", event.Action,
-		"container_name", event.Actor.Attributes["name"],
+		"container_name", containerName,
 		"container_id", containerID)
 
 	// For critical events like stop/die, handle immediately to avoid race conditions
@@ -387,7 +389,7 @@ func (p *Provider) handleContainerEvent(ctx context.Context, configCh chan<- *co
 		// Handle stop/die events immediately to avoid Docker API race conditions
 		slog.Debug("Handling stop/die event immediately (no debouncing)",
 			"action", event.Action,
-			"container_name", event.Actor.Attributes["name"])
+			"container_name", containerName)
 
 		// Save the old config before loading new one
 		oldConfig := p.getLastConfig()
@@ -402,7 +404,6 @@ func (p *Provider) handleContainerEvent(ctx context.Context, configCh chan<- *co
 		// Manually remove the service associated with the stopped container
 		// This handles the Docker API race condition where a container might still appear as "running"
 		// briefly after the stop event is received
-		containerName := event.Actor.Attributes["name"]
 		if containerName != "" {
 			newConfig = p.removeServiceByContainerName(newConfig, containerName)
 		}
@@ -411,7 +412,7 @@ func (p *Provider) handleContainerEvent(ctx context.Context, configCh chan<- *co
 		if !p.configEqual(oldConfig, newConfig) {
 			slog.Info("Docker configuration changed due to container event",
 				"action", event.Action,
-				"container_name", event.Actor.Attributes["name"])
+				"container_name", containerName)
 
 			select {
 			case configCh <- newConfig:
@@ -427,7 +428,7 @@ func (p *Provider) handleContainerEvent(ctx context.Context, configCh chan<- *co
 		// For start and other events, use debounced reload
 		slog.Debug("Triggering debounced configuration reload due to container event",
 			"action", event.Action,
-			"container_name", event.Actor.Attributes["name"])
+			"container_name", containerName)
 
 		p.debouncedReload(ctx, configCh)
 	}
@@ -536,10 +537,10 @@ func (p *Provider) findSelfContainer(ctx context.Context) (*container.Summary, e
 	hostname, err := p.getHostname()
 	if err == nil {
 		slog.Debug("checking for self container by hostname", "hostname", hostname)
-		container, err := p.getContainerByID(ctx, hostname)
+		self, err := p.getContainerByID(ctx, hostname)
 		if err == nil {
-			slog.Debug("found self container by hostname", "container", container.ID)
-			return container, nil
+			slog.Debug("found self container by hostname", "container", self.ID)
+			return self, nil
 		}
 
 		slog.Debug("failed to find self container by hostname", "error", err)
@@ -569,41 +570,31 @@ func (p *Provider) findSelfContainer(ctx context.Context) (*container.Summary, e
 
 // findServiceContainers finds all containers with tsbridge.enabled=true or tsbridge.enable=true
 func (p *Provider) findServiceContainers(ctx context.Context) ([]container.Summary, error) {
-	// Query for containers with enabled=true
-	enabledLabel := fmt.Sprintf("%s.enabled=true", p.labelPrefix)
-	enabledOpts := container.ListOptions{
-		Filters: filters.NewArgs(
-			filters.Arg("status", "running"),
-			filters.Arg("label", enabledLabel),
-		),
+	// Query running containers carrying a single "label=value" filter.
+	listByLabel := func(label string) ([]container.Summary, error) {
+		opts := container.ListOptions{
+			Filters: filters.NewArgs(
+				filters.Arg("status", "running"),
+				filters.Arg("label", label),
+			),
+		}
+		return p.client.ContainerList(ctx, opts)
 	}
 
-	enabledContainers, err := p.client.ContainerList(ctx, enabledOpts)
-	if err != nil {
-		return nil, err
-	}
-
-	// Query for containers with enable=true
-	enableLabel := fmt.Sprintf("%s.enable=true", p.labelPrefix)
-	enableOpts := container.ListOptions{
-		Filters: filters.NewArgs(
-			filters.Arg("status", "running"),
-			filters.Arg("label", enableLabel),
-		),
-	}
-
-	enableContainers, err := p.client.ContainerList(ctx, enableOpts)
-	if err != nil {
-		return nil, err
-	}
-
-	// Merge results and remove duplicates
+	// Query both "enabled" and "enable" labels separately, since Docker ANDs
+	// multiple label filters together.
 	containerMap := make(map[string]container.Summary)
-	for _, c := range enabledContainers {
-		containerMap[c.ID] = c
-	}
-	for _, c := range enableContainers {
-		containerMap[c.ID] = c
+	for _, label := range []string{
+		fmt.Sprintf("%s.enabled=true", p.labelPrefix),
+		fmt.Sprintf("%s.enable=true", p.labelPrefix),
+	} {
+		containers, err := listByLabel(label)
+		if err != nil {
+			return nil, err
+		}
+		for _, c := range containers {
+			containerMap[c.ID] = c
+		}
 	}
 
 	// Convert map back to slice
@@ -690,16 +681,11 @@ func (p *Provider) removeServiceByContainerName(cfg *config.Config, containerNam
 	// Copy all services except those matching the container name
 	removed := false
 	for _, svc := range cfg.Services {
-		// Parse the backend address to extract the hostname part
-		// Backend addresses are typically in format: "container-name:port" or "docker-container-name:port"
-		hostPort := svc.BackendAddr
-
-		// Extract just the hostname part (before the port)
-		var hostname string
-		if idx := strings.LastIndex(hostPort, ":"); idx > 0 {
-			hostname = hostPort[:idx]
-		} else {
-			hostname = hostPort
+		// Extract the hostname part of the backend address (before the port).
+		// Backend addresses are typically "container-name:port".
+		hostname := svc.BackendAddr
+		if idx := strings.LastIndex(hostname, ":"); idx > 0 {
+			hostname = hostname[:idx]
 		}
 
 		// Check for exact match only to prevent false positives

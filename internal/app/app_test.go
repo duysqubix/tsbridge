@@ -46,6 +46,32 @@ func createTestConfig(t *testing.T) *config.Config {
 	return cfg
 }
 
+// mockTSNetFactory returns a factory that produces mock tsnet servers.
+func mockTSNetFactory(serviceName string) tsnet.TSNetServer {
+	return tsnet.NewMockTSNetServer()
+}
+
+// startAcceptingBackend starts a TCP listener that accepts and immediately
+// closes connections, returning its address. The listener is closed on cleanup.
+func startAcceptingBackend(t *testing.T) string {
+	t.Helper()
+	backend, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { backend.Close() })
+
+	go func() {
+		for {
+			conn, err := backend.Accept()
+			if err != nil {
+				return
+			}
+			conn.Close()
+		}
+	}()
+
+	return backend.Addr().String()
+}
+
 func TestNewApp(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -399,21 +425,7 @@ func TestAppStartDoesNotBlockShutdown(t *testing.T) {
 
 func TestAppStartWithPartialServiceFailures(t *testing.T) {
 	t.Run("app continues when some services fail", func(t *testing.T) {
-		// Start a test backend server
-		backend, err := net.Listen("tcp", "127.0.0.1:0")
-		require.NoError(t, err)
-		defer backend.Close()
-
-		// Accept connections in background
-		go func() {
-			for {
-				conn, err := backend.Accept()
-				if err != nil {
-					return
-				}
-				conn.Close()
-			}
-		}()
+		backendAddr := startAcceptingBackend(t)
 
 		// Create config with 3 services, 2 will fail
 		cfg := &config.Config{
@@ -425,7 +437,7 @@ func TestAppStartWithPartialServiceFailures(t *testing.T) {
 			},
 			Services: []config.Service{
 				{Name: "service1", BackendAddr: "127.0.0.1:9999", TLSMode: "off"},
-				{Name: "service2", BackendAddr: backend.Addr().String(), TLSMode: "off"}, // This one works
+				{Name: "service2", BackendAddr: backendAddr, TLSMode: "off"}, // This one works
 				{Name: "service3", BackendAddr: "127.0.0.1:9997", TLSMode: "off"},
 			},
 			Tailscale: config.Tailscale{
@@ -433,14 +445,9 @@ func TestAppStartWithPartialServiceFailures(t *testing.T) {
 			},
 		}
 
-		// Create tailscale server with mock factory
-		factory := func(serviceName string) tsnet.TSNetServer {
-			return tsnet.NewMockTSNetServer()
-		}
-		tsServer, err := tailscale.NewServerWithFactory(cfg.Tailscale, factory)
+		tsServer, err := tailscale.NewServerWithFactory(cfg.Tailscale, mockTSNetFactory)
 		require.NoError(t, err)
 
-		// Create app with the mocked dependencies
 		app, err := NewAppWithOptions(cfg, Options{
 			TSServer: tsServer,
 		})
@@ -490,14 +497,9 @@ func TestAppStartWithPartialServiceFailures(t *testing.T) {
 			},
 		}
 
-		// Create tailscale server with mock factory
-		factory := func(serviceName string) tsnet.TSNetServer {
-			return tsnet.NewMockTSNetServer()
-		}
-		tsServer, err := tailscale.NewServerWithFactory(cfg.Tailscale, factory)
+		tsServer, err := tailscale.NewServerWithFactory(cfg.Tailscale, mockTSNetFactory)
 		require.NoError(t, err)
 
-		// Create app with the mocked dependencies
 		app, err := NewAppWithOptions(cfg, Options{
 			TSServer: tsServer,
 		})
@@ -507,7 +509,6 @@ func TestAppStartWithPartialServiceFailures(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 
-		// Start the app
 		err = app.Start(ctx)
 
 		// Should succeed because we use lazy connections
@@ -515,21 +516,7 @@ func TestAppStartWithPartialServiceFailures(t *testing.T) {
 	})
 
 	t.Run("metrics server continues when some services fail", func(t *testing.T) {
-		// Start a test backend server
-		backend, err := net.Listen("tcp", "127.0.0.1:0")
-		require.NoError(t, err)
-		defer backend.Close()
-
-		// Accept connections in background
-		go func() {
-			for {
-				conn, err := backend.Accept()
-				if err != nil {
-					return
-				}
-				conn.Close()
-			}
-		}()
+		backendAddr := startAcceptingBackend(t)
 
 		// Create config with metrics and mixed services
 		cfg := &config.Config{
@@ -542,18 +529,14 @@ func TestAppStartWithPartialServiceFailures(t *testing.T) {
 			},
 			Services: []config.Service{
 				{Name: "service1", BackendAddr: "127.0.0.1:9999", TLSMode: "off"},
-				{Name: "service2", BackendAddr: backend.Addr().String(), TLSMode: "off"}, // This one works
+				{Name: "service2", BackendAddr: backendAddr, TLSMode: "off"}, // This one works
 			},
 			Tailscale: config.Tailscale{
 				AuthKey: "test-key",
 			},
 		}
 
-		// Create app with mock dependencies
-		factory := func(serviceName string) tsnet.TSNetServer {
-			return tsnet.NewMockTSNetServer()
-		}
-		tsServer, err := tailscale.NewServerWithFactory(cfg.Tailscale, factory)
+		tsServer, err := tailscale.NewServerWithFactory(cfg.Tailscale, mockTSNetFactory)
 		require.NoError(t, err)
 
 		app, err := NewAppWithOptions(cfg, Options{

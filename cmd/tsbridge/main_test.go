@@ -1274,24 +1274,14 @@ func (m *mockApp) isShutdown() bool {
 
 // trackingMockApp is a test implementation that tracks method calls
 type trackingMockApp struct {
-	mu         sync.Mutex
-	started    bool
-	shutdown   bool
 	onShutdown func() // Called when Shutdown is invoked
 }
 
 func (m *trackingMockApp) Start(ctx context.Context) error {
-	m.mu.Lock()
-	m.started = true
-	m.mu.Unlock()
 	return nil
 }
 
 func (m *trackingMockApp) Shutdown(ctx context.Context) error {
-	m.mu.Lock()
-	m.shutdown = true
-	m.mu.Unlock()
-
 	if m.onShutdown != nil {
 		m.onShutdown()
 	}
@@ -1751,7 +1741,6 @@ func TestSetupLoggingOnce(t *testing.T) {
 	setupLogging(true)
 
 	// Replace the handler to capture output but keep the same logger level
-	currentLogger := slog.Default()
 	handler := slog.NewTextHandler(&buf, &slog.HandlerOptions{
 		Level: slog.LevelDebug, // Match what verbose=true would set
 	})
@@ -1776,9 +1765,6 @@ func TestSetupLoggingOnce(t *testing.T) {
 	slog.Info("info message 2")
 	assert.Contains(t, buf.String(), "debug message 2", "Debug should still be visible - setupLogging should only run once")
 	assert.Contains(t, buf.String(), "info message 2", "Info should still be visible")
-
-	// Restore original logger to see if it was changed
-	slog.SetDefault(currentLogger)
 }
 
 // TestCreateProvider tests the createProvider function

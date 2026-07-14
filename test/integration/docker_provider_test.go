@@ -31,29 +31,18 @@ func TestDockerProviderIntegration(t *testing.T) {
 		defer cancel()
 
 		// Start tsbridge with docker provider
-		cmd := exec.CommandContext(ctx, binPath, "-provider", "docker", "-verbose")
-		var stdout, stderr bytes.Buffer
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-
-		err := cmd.Start()
-		require.NoError(t, err)
+		_, output := startTSBridgeDocker(t, ctx, binPath, "-verbose")
 
 		// Give it time to start
 		time.Sleep(2 * time.Second)
 
 		// Check that it started successfully
-		output := stdout.String() + stderr.String()
-		assert.Contains(t, output, "provider=docker")
-		assert.Contains(t, output, "starting tsbridge")
+		assert.Contains(t, output.String(), "provider=docker")
+		assert.Contains(t, output.String(), "starting tsbridge")
 
 		// Should handle no services gracefully
-		assert.NotContains(t, output, "panic")
-		assert.NotContains(t, output, "fatal")
-
-		// Cleanup
-		cmd.Process.Kill()
-		cmd.Wait()
+		assert.NotContains(t, output.String(), "panic")
+		assert.NotContains(t, output.String(), "fatal")
 	})
 
 	t.Run("docker provider with custom socket path", func(t *testing.T) {
@@ -69,29 +58,16 @@ func TestDockerProviderIntegration(t *testing.T) {
 			}
 		}
 
-		cmd := exec.CommandContext(ctx, binPath,
-			"-provider", "docker",
+		_, output := startTSBridgeDocker(t, ctx, binPath,
 			"-docker-socket", "unix://"+socketPath,
 			"-docker-label-prefix", "test-tsbridge",
 			"-verbose")
 
-		var stdout, stderr bytes.Buffer
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-
-		err := cmd.Start()
-		require.NoError(t, err)
-
 		// Give it time to start
 		time.Sleep(1 * time.Second)
 
-		output := stdout.String() + stderr.String()
-		assert.Contains(t, output, "provider=docker")
-		assert.Contains(t, output, "test-tsbridge") // Custom label prefix should be used
-
-		// Cleanup
-		cmd.Process.Kill()
-		cmd.Wait()
+		assert.Contains(t, output.String(), "provider=docker")
+		assert.Contains(t, output.String(), "test-tsbridge") // Custom label prefix should be used
 	})
 }
 
@@ -115,47 +91,20 @@ func TestDockerProviderDynamicConfiguration(t *testing.T) {
 
 		// Start a test HTTP server container with tsbridge labels
 		testContainerName := "tsbridge-test-httpbin-" + time.Now().Format("20060102150405")
-		httpbinCmd := exec.CommandContext(ctx, "docker", "run", "--rm", "-d",
-			"--name", testContainerName,
-			"--label", "tsbridge.enabled=true",
-			"--label", "tsbridge.service.name=test-httpbin",
-			"--label", "tsbridge.service.backend_addr="+testContainerName+":8080",
-			"kennethreitz/httpbin")
-
-		containerID, err := httpbinCmd.Output()
-		require.NoError(t, err)
-		containerID = bytes.TrimSpace(containerID)
-
-		// Ensure cleanup
-		defer func() {
-			exec.Command("docker", "stop", string(containerID)).Run()
-		}()
+		runHTTPBin(t, ctx, testContainerName,
+			"tsbridge.enabled=true",
+			"tsbridge.service.name=test-httpbin",
+			"tsbridge.service.backend_addr="+testContainerName+":8080")
 
 		// Start tsbridge with docker provider
-		tsbridgeCmd := exec.CommandContext(ctx, binPath,
-			"-provider", "docker",
-			"-verbose")
-
-		var stdout, stderr bytes.Buffer
-		tsbridgeCmd.Stdout = &stdout
-		tsbridgeCmd.Stderr = &stderr
-
-		err = tsbridgeCmd.Start()
-		require.NoError(t, err)
-
-		// Ensure cleanup
-		defer func() {
-			tsbridgeCmd.Process.Kill()
-			tsbridgeCmd.Wait()
-		}()
+		_, output := startTSBridgeDocker(t, ctx, binPath, "-verbose")
 
 		// Wait for tsbridge to detect the container
 		time.Sleep(3 * time.Second)
 
-		output := stdout.String() + stderr.String()
 		// Should detect and load the service
-		assert.Contains(t, output, "test-httpbin", "Should detect test-httpbin service")
-		assert.Contains(t, output, "loading configuration", "Should load configuration")
+		assert.Contains(t, output.String(), "test-httpbin", "Should detect test-httpbin service")
+		assert.Contains(t, output.String(), "loading configuration", "Should load configuration")
 	})
 
 	t.Run("container stop triggers service removal", func(t *testing.T) {
@@ -164,48 +113,26 @@ func TestDockerProviderDynamicConfiguration(t *testing.T) {
 
 		// Start test container first
 		testContainerName := "tsbridge-test-removal-" + time.Now().Format("20060102150405")
-		httpbinCmd := exec.CommandContext(ctx, "docker", "run", "--rm", "-d",
-			"--name", testContainerName,
-			"--label", "tsbridge.enabled=true",
-			"--label", "tsbridge.service.name=test-removal",
-			"--label", "tsbridge.service.backend_addr="+testContainerName+":8080",
-			"kennethreitz/httpbin")
-
-		containerID, err := httpbinCmd.Output()
-		require.NoError(t, err)
-		containerID = bytes.TrimSpace(containerID)
+		containerID := runHTTPBin(t, ctx, testContainerName,
+			"tsbridge.enabled=true",
+			"tsbridge.service.name=test-removal",
+			"tsbridge.service.backend_addr="+testContainerName+":8080")
 
 		// Start tsbridge
-		tsbridgeCmd := exec.CommandContext(ctx, binPath,
-			"-provider", "docker",
-			"-verbose")
-
-		var stdout, stderr bytes.Buffer
-		tsbridgeCmd.Stdout = &stdout
-		tsbridgeCmd.Stderr = &stderr
-
-		err = tsbridgeCmd.Start()
-		require.NoError(t, err)
-
-		// Ensure cleanup
-		defer func() {
-			tsbridgeCmd.Process.Kill()
-			tsbridgeCmd.Wait()
-		}()
+		_, output := startTSBridgeDocker(t, ctx, binPath, "-verbose")
 
 		// Wait for initial detection
 		time.Sleep(3 * time.Second)
 
 		// Stop the container
-		err = exec.Command("docker", "stop", string(containerID)).Run()
+		err := exec.Command("docker", "stop", containerID).Run()
 		require.NoError(t, err)
 
 		// Wait for removal detection
 		time.Sleep(3 * time.Second)
 
-		output := stdout.String() + stderr.String()
 		// Should show container event handling
-		assert.Contains(t, output, "test-removal", "Should have detected test-removal service")
+		assert.Contains(t, output.String(), "test-removal", "Should have detected test-removal service")
 	})
 }
 
@@ -224,46 +151,19 @@ func TestDockerProviderLabelVariations(t *testing.T) {
 
 		// Start container with "enable" label (without 'd')
 		testContainerName := "tsbridge-test-enable-" + time.Now().Format("20060102150405")
-		httpbinCmd := exec.CommandContext(ctx, "docker", "run", "--rm", "-d",
-			"--name", testContainerName,
-			"--label", "tsbridge.enable=true", // Note: "enable" not "enabled"
-			"--label", "tsbridge.service.name=test-enable",
-			"--label", "tsbridge.service.backend_addr="+testContainerName+":8080",
-			"kennethreitz/httpbin")
-
-		containerID, err := httpbinCmd.Output()
-		require.NoError(t, err)
-		containerID = bytes.TrimSpace(containerID)
-
-		// Ensure cleanup
-		defer func() {
-			exec.Command("docker", "stop", string(containerID)).Run()
-		}()
+		runHTTPBin(t, ctx, testContainerName,
+			"tsbridge.enable=true", // Note: "enable" not "enabled"
+			"tsbridge.service.name=test-enable",
+			"tsbridge.service.backend_addr="+testContainerName+":8080")
 
 		// Start tsbridge
-		tsbridgeCmd := exec.CommandContext(ctx, binPath,
-			"-provider", "docker",
-			"-verbose")
-
-		var stdout, stderr bytes.Buffer
-		tsbridgeCmd.Stdout = &stdout
-		tsbridgeCmd.Stderr = &stderr
-
-		err = tsbridgeCmd.Start()
-		require.NoError(t, err)
-
-		// Ensure cleanup
-		defer func() {
-			tsbridgeCmd.Process.Kill()
-			tsbridgeCmd.Wait()
-		}()
+		_, output := startTSBridgeDocker(t, ctx, binPath, "-verbose")
 
 		// Wait for detection
 		time.Sleep(3 * time.Second)
 
-		output := stdout.String() + stderr.String()
 		// Should detect service with "enable" label
-		assert.Contains(t, output, "test-enable", "Should detect service with 'enable' label")
+		assert.Contains(t, output.String(), "test-enable", "Should detect service with 'enable' label")
 	})
 
 	t.Run("custom label prefix", func(t *testing.T) {
@@ -273,48 +173,22 @@ func TestDockerProviderLabelVariations(t *testing.T) {
 		// Start container with custom label prefix
 		customPrefix := "myapp"
 		testContainerName := "tsbridge-test-custom-" + time.Now().Format("20060102150405")
-		httpbinCmd := exec.CommandContext(ctx, "docker", "run", "--rm", "-d",
-			"--name", testContainerName,
-			"--label", customPrefix+".enabled=true",
-			"--label", customPrefix+".service.name=test-custom",
-			"--label", customPrefix+".service.backend_addr="+testContainerName+":8080",
-			"kennethreitz/httpbin")
-
-		containerID, err := httpbinCmd.Output()
-		require.NoError(t, err)
-		containerID = bytes.TrimSpace(containerID)
-
-		// Ensure cleanup
-		defer func() {
-			exec.Command("docker", "stop", string(containerID)).Run()
-		}()
+		runHTTPBin(t, ctx, testContainerName,
+			customPrefix+".enabled=true",
+			customPrefix+".service.name=test-custom",
+			customPrefix+".service.backend_addr="+testContainerName+":8080")
 
 		// Start tsbridge with custom label prefix
-		tsbridgeCmd := exec.CommandContext(ctx, binPath,
-			"-provider", "docker",
+		_, output := startTSBridgeDocker(t, ctx, binPath,
 			"-docker-label-prefix", customPrefix,
 			"-verbose")
-
-		var stdout, stderr bytes.Buffer
-		tsbridgeCmd.Stdout = &stdout
-		tsbridgeCmd.Stderr = &stderr
-
-		err = tsbridgeCmd.Start()
-		require.NoError(t, err)
-
-		// Ensure cleanup
-		defer func() {
-			tsbridgeCmd.Process.Kill()
-			tsbridgeCmd.Wait()
-		}()
 
 		// Wait for detection
 		time.Sleep(3 * time.Second)
 
-		output := stdout.String() + stderr.String()
 		// Should detect service with custom label prefix
-		assert.Contains(t, output, "test-custom", "Should detect service with custom label prefix")
-		assert.Contains(t, output, customPrefix, "Should use custom label prefix")
+		assert.Contains(t, output.String(), "test-custom", "Should detect service with custom label prefix")
+		assert.Contains(t, output.String(), customPrefix, "Should use custom label prefix")
 	})
 }
 
@@ -353,29 +227,61 @@ func TestDockerProviderErrorHandling(t *testing.T) {
 		defer cancel()
 
 		// Try TCP endpoint (will fail if Docker not listening on TCP)
-		cmd := exec.CommandContext(ctx, binPath,
-			"-provider", "docker",
+		_, output := startTSBridgeDocker(t, ctx, binPath,
 			"-docker-socket", "tcp://localhost:2375",
 			"-verbose")
-
-		var stdout, stderr bytes.Buffer
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-
-		err := cmd.Start()
-		require.NoError(t, err)
 
 		// Give it a moment
 		time.Sleep(1 * time.Second)
 
-		// Kill it
-		cmd.Process.Kill()
-		cmd.Wait()
-
-		output := stdout.String() + stderr.String()
 		// Should at least attempt to use TCP endpoint
-		assert.Contains(t, output, "provider=docker")
+		assert.Contains(t, output.String(), "provider=docker")
 	})
+}
+
+// startTSBridgeDocker starts a tsbridge process with the docker provider,
+// capturing combined stdout/stderr into the returned buffer. The process is
+// killed and reaped via t.Cleanup. Using a single buffer for both streams is
+// safe because os/exec serializes writes when Stdout and Stderr are equal.
+func startTSBridgeDocker(t *testing.T, ctx context.Context, binPath string, extraArgs ...string) (*exec.Cmd, *bytes.Buffer) {
+	t.Helper()
+
+	args := append([]string{"-provider", "docker"}, extraArgs...)
+	cmd := exec.CommandContext(ctx, binPath, args...)
+
+	var output bytes.Buffer
+	cmd.Stdout = &output
+	cmd.Stderr = &output
+
+	require.NoError(t, cmd.Start())
+	t.Cleanup(func() {
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+	})
+
+	return cmd, &output
+}
+
+// runHTTPBin starts a kennethreitz/httpbin container with the given labels and
+// registers cleanup to stop it. It returns the trimmed container ID.
+func runHTTPBin(t *testing.T, ctx context.Context, name string, labels ...string) string {
+	t.Helper()
+
+	args := []string{"run", "--rm", "-d", "--name", name}
+	for _, label := range labels {
+		args = append(args, "--label", label)
+	}
+	args = append(args, "kennethreitz/httpbin")
+
+	containerID, err := exec.CommandContext(ctx, "docker", args...).Output()
+	require.NoError(t, err)
+	containerID = bytes.TrimSpace(containerID)
+
+	t.Cleanup(func() {
+		_ = exec.Command("docker", "stop", string(containerID)).Run()
+	})
+
+	return string(containerID)
 }
 
 // isDockerAvailable checks if Docker is available on the system

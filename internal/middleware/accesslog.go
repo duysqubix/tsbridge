@@ -50,19 +50,15 @@ func AccessLog(logger *slog.Logger, serviceName string) func(http.Handler) http.
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 
-			// Wrap the response writer to capture status and size
 			wrapped := &accessLogResponseWriter{
 				ResponseWriter: w,
-				statusCode:     http.StatusOK, // Default to 200
+				statusCode:     http.StatusOK,
 			}
 
-			// Process request
 			next.ServeHTTP(wrapped, r)
 
-			// Calculate duration
 			duration := time.Since(start)
 
-			// Build log attributes
 			attrs := []slog.Attr{
 				slog.String("service", serviceName),
 				slog.String("method", r.Method),
@@ -72,25 +68,21 @@ func AccessLog(logger *slog.Logger, serviceName string) func(http.Handler) http.
 				slog.Float64("duration_ms", float64(duration.Microseconds())/1000.0),
 			}
 
-			// Add request ID if available (from context or header)
+			// Prefer the request ID from context, falling back to the header.
 			requestID := GetRequestID(r.Context())
 			if requestID == "" {
-				// Fallback to header if not in context
 				requestID = r.Header.Get("X-Request-ID")
 			}
 			if requestID != "" {
 				attrs = append(attrs, slog.String("request_id", requestID))
 			}
 
-			// Add user agent if present
 			if ua := r.Header.Get("User-Agent"); ua != "" {
 				attrs = append(attrs, slog.String("user_agent", ua))
 			}
 
-			// Add remote address
 			attrs = append(attrs, slog.String("remote_addr", r.RemoteAddr))
 
-			// Log the request
 			logger.LogAttrs(r.Context(), slog.LevelInfo, "HTTP request", attrs...)
 		})
 	}

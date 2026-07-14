@@ -19,16 +19,10 @@ type serviceRegistryOps interface {
 // Removes, adds, and updates services as needed, in that order.
 // Continues on errors and returns a ReloadError if any occur.
 func reloadConfigWithRegistry(oldCfg, newCfg *config.Config, registry serviceRegistryOps) error {
-	// Find services to remove (in old but not in new)
 	toRemove := findServicesToRemove(oldCfg, newCfg)
-
-	// Find services to add (in new but not in old)
 	toAdd := findServicesToAdd(oldCfg, newCfg)
-
-	// Find services to update (in both but changed)
 	toUpdate := findServicesToUpdate(oldCfg, newCfg)
 
-	// Log planned changes
 	if len(toRemove) > 0 || len(toAdd) > 0 || len(toUpdate) > 0 {
 		slog.Info("configuration changes detected",
 			"services_to_remove", len(toRemove),
@@ -39,10 +33,8 @@ func reloadConfigWithRegistry(oldCfg, newCfg *config.Config, registry serviceReg
 		return nil
 	}
 
-	// Track all errors during reload
 	reloadErr := errors.NewReloadError()
 
-	// Process removals
 	for _, name := range toRemove {
 		if err := registry.RemoveService(name); err != nil {
 			slog.Error("failed to remove service",
@@ -58,7 +50,6 @@ func reloadConfigWithRegistry(oldCfg, newCfg *config.Config, registry serviceReg
 		}
 	}
 
-	// Process additions
 	for _, svc := range toAdd {
 		if err := registry.AddService(svc); err != nil {
 			slog.Error("failed to add service",
@@ -76,7 +67,6 @@ func reloadConfigWithRegistry(oldCfg, newCfg *config.Config, registry serviceReg
 		}
 	}
 
-	// Process updates
 	for _, svc := range toUpdate {
 		if err := registry.UpdateService(svc.Name, svc); err != nil {
 			slog.Error("failed to update service",
@@ -94,7 +84,6 @@ func reloadConfigWithRegistry(oldCfg, newCfg *config.Config, registry serviceReg
 		}
 	}
 
-	// Log reload summary
 	if reloadErr.HasErrors() {
 		slog.Warn("configuration reload completed with errors",
 			"successful_operations", reloadErr.Successful,

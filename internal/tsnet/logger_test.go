@@ -140,8 +140,7 @@ func TestTSNetLogAdapter(t *testing.T) {
 	}
 }
 
-func TestTSNetLogAdapterWithNilLogger(t *testing.T) {
-	// Test that adapter handles nil logger gracefully
+func TestTSNetLogAdapterDoesNotPanic(t *testing.T) {
 	adapter := tsnetLogAdapter("test-service")
 
 	// This should not panic

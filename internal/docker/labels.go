@@ -96,7 +96,7 @@ func (p *labelParser) getByteSize(key string) *int64 {
 	if value == "" {
 		return nil
 	}
-	result, err := parseByteSize(value)
+	result, err := config.ParseByteSizeString(value)
 	if err != nil {
 		slog.Warn("failed to parse ByteSize from Docker label",
 			"key", key,
@@ -119,9 +119,7 @@ func (p *labelParser) getHeaders(key string) map[string]string {
 	fullPrefix := fmt.Sprintf("%s.%s.", p.prefix, key)
 
 	for label, value := range p.labels {
-		if after, ok := strings.CutPrefix(label, fullPrefix); ok {
-			headerName := after
-
+		if headerName, ok := strings.CutPrefix(label, fullPrefix); ok {
 			// Validate header name to prevent injection attacks
 			if !isValidHeaderName(headerName) {
 				slog.Warn("rejecting invalid header name from Docker label",
@@ -364,12 +362,4 @@ func parseStringSlice(value, separator string) []string {
 		parts[i] = strings.TrimSpace(parts[i])
 	}
 	return parts
-}
-
-// parseByteSize parses a byte size string and returns an int64
-func parseByteSize(value string) (int64, error) {
-	if value == "" {
-		return 0, nil
-	}
-	return config.ParseByteSizeString(value)
 }

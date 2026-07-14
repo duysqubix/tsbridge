@@ -2,6 +2,7 @@
 package helpers
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -88,8 +90,9 @@ func CreateTrackingBackend(t *testing.T) (*httptest.Server, *RequestTracker) {
 	return server, tracker
 }
 
-// CreateTestConfig creates a standard test configuration.
-func CreateTestConfig(t *testing.T, serviceName string, backendAddr string) *config.Config {
+// baseTestConfig returns a Config with standard Tailscale and Global defaults
+// and no services.
+func baseTestConfig(t *testing.T) *config.Config {
 	t.Helper()
 
 	return &config.Config{
@@ -104,44 +107,36 @@ func CreateTestConfig(t *testing.T, serviceName string, backendAddr string) *con
 			IdleTimeout:       new(120 * time.Second),
 			ShutdownTimeout:   new(10 * time.Second),
 		},
-		Services: []config.Service{
-			{
-				Name:         serviceName,
-				BackendAddr:  backendAddr,
-				TLSMode:      "off",
-				WhoisEnabled: new(false),
-			},
-		},
 	}
+}
+
+// defaultService returns a Service with standard test defaults.
+func defaultService(name, backendAddr string) config.Service {
+	return config.Service{
+		Name:         name,
+		BackendAddr:  backendAddr,
+		TLSMode:      "off",
+		WhoisEnabled: new(false),
+	}
+}
+
+// CreateTestConfig creates a standard test configuration.
+func CreateTestConfig(t *testing.T, serviceName string, backendAddr string) *config.Config {
+	t.Helper()
+
+	cfg := baseTestConfig(t)
+	cfg.Services = []config.Service{defaultService(serviceName, backendAddr)}
+	return cfg
 }
 
 // CreateMultiServiceConfig creates a test configuration with multiple services.
 func CreateMultiServiceConfig(t *testing.T, services map[string]string) *config.Config {
 	t.Helper()
 
-	cfg := &config.Config{
-		Tailscale: config.Tailscale{
-			AuthKey:  config.RedactedString("tskey-auth-test123"),
-			StateDir: t.TempDir(),
-		},
-		Global: config.Global{
-			MetricsAddr:       "localhost:0",
-			ReadHeaderTimeout: new(30 * time.Second),
-			WriteTimeout:      new(30 * time.Second),
-			IdleTimeout:       new(120 * time.Second),
-			ShutdownTimeout:   new(10 * time.Second),
-		},
-	}
-
+	cfg := baseTestConfig(t)
 	for name, addr := range services {
-		cfg.Services = append(cfg.Services, config.Service{
-			Name:         name,
-			BackendAddr:  addr,
-			TLSMode:      "off",
-			WhoisEnabled: new(false),
-		})
+		cfg.Services = append(cfg.Services, defaultService(name, addr))
 	}
-
 	return cfg
 }
 
@@ -164,10 +159,13 @@ func BuildTestBinary(t *testing.T) string {
 
 // TSBridgeProcess wraps an exec.Cmd for tsbridge with helper methods.
 type TSBridgeProcess struct {
-	cmd        *exec.Cmd
-	outputChan chan string
-	t          *testing.T
-	shutdown   bool
+	cmd      *exec.Cmd
+	t        *testing.T
+	shutdown bool
+
+	mu     sync.Mutex
+	output strings.Builder
+	done   chan struct{}
 }
 
 // StartTSBridge starts a tsbridge process with common setup.
@@ -192,24 +190,27 @@ func StartTSBridge(t *testing.T, configPath string, extraEnv ...string) *TSBridg
 	errPipe, err := cmd.StderrPipe()
 	require.NoError(t, err, "failed to create stderr pipe")
 
-	combinedOutput := io.MultiReader(outputPipe, errPipe)
-
 	// Start the process
 	err = cmd.Start()
 	require.NoError(t, err, "failed to start tsbridge")
 
-	// Read output in goroutine
-	outputChan := make(chan string, 1)
-	go func() {
-		output, _ := io.ReadAll(combinedOutput)
-		outputChan <- string(output)
-	}()
-
 	process := &TSBridgeProcess{
-		cmd:        cmd,
-		outputChan: outputChan,
-		t:          t,
+		cmd:  cmd,
+		t:    t,
+		done: make(chan struct{}),
 	}
+
+	// Stream stdout and stderr concurrently into a shared buffer while the
+	// process runs, so WaitForStartup can watch for the startup marker (which
+	// tsbridge logs to stderr).
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go process.readPipe(&wg, outputPipe)
+	go process.readPipe(&wg, errPipe)
+	go func() {
+		wg.Wait()
+		close(process.done)
+	}()
 
 	// Wait for startup instead of fixed sleep
 	process.WaitForStartup()
@@ -251,28 +252,56 @@ func (p *TSBridgeProcess) Shutdown() {
 	}
 }
 
-// WaitForStartup waits for the tsbridge process to complete initial startup.
-// This is more reliable than a fixed sleep and makes tests less flaky.
+// readPipe streams a process pipe line by line into the shared output buffer
+// until the pipe closes (i.e. the process exits).
+func (p *TSBridgeProcess) readPipe(wg *sync.WaitGroup, r io.Reader) {
+	defer wg.Done()
+
+	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	for scanner.Scan() {
+		p.mu.Lock()
+		p.output.WriteString(scanner.Text())
+		p.output.WriteByte('\n')
+		p.mu.Unlock()
+	}
+}
+
+// outputContains reports whether the output captured so far contains s.
+func (p *TSBridgeProcess) outputContains(s string) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return strings.Contains(p.output.String(), s)
+}
+
+// WaitForStartup blocks until tsbridge reports that a service is serving,
+// polling the captured log output with exponential backoff. It returns as soon
+// as the marker appears or the process exits; if neither happens within the
+// budget it returns anyway so the caller fails on a clear assertion rather than
+// hanging.
 func (p *TSBridgeProcess) WaitForStartup() {
 	p.t.Helper()
 
-	// In test mode, startup is fast. Use exponential backoff
-	// starting with a very short delay.
-	delays := []time.Duration{
-		50 * time.Millisecond,
-		100 * time.Millisecond,
-		200 * time.Millisecond,
-		400 * time.Millisecond,
-		800 * time.Millisecond,
-	}
+	const readyMarker = "started service"
+	const maxWait = 6 * time.Second
 
-	for i, delay := range delays {
-		time.Sleep(delay)
-
-		// For the last delay, log if startup is taking too long
-		if i == len(delays)-1 {
-			p.t.Logf("Note: startup took longer than expected (>1.5s)")
+	var elapsed time.Duration
+	for delay := 50 * time.Millisecond; elapsed < maxWait; {
+		if p.outputContains(readyMarker) {
+			return
 		}
+		select {
+		case <-p.done: // process exited before it became ready
+			return
+		case <-time.After(delay):
+		}
+		elapsed += delay
+		if delay < time.Second {
+			delay *= 2
+		}
+	}
+	if !p.outputContains(readyMarker) {
+		p.t.Logf("WaitForStartup: %q not observed within %s; continuing", readyMarker, maxWait)
 	}
 }
 
@@ -285,11 +314,14 @@ func (p *TSBridgeProcess) GetOutput() string {
 	}
 
 	select {
-	case output := <-p.outputChan:
-		return output
+	case <-p.done:
 	case <-time.After(1 * time.Second):
 		return "Failed to get output"
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.output.String()
 }
 
 // WriteConfigFile writes a TOML config file for testing.

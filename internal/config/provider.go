@@ -64,12 +64,7 @@ func NewProvider(providerType string, configPath string, dockerOpts DockerProvid
 		return nil, errors.NewValidationError("unknown provider type: " + providerType)
 	}
 
-	provider, err := DefaultRegistry.Get(providerType, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	return provider, nil
+	return DefaultRegistry.Get(providerType, opts)
 }
 
 // DockerProviderOptions contains options for the Docker provider

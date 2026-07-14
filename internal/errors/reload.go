@@ -17,14 +17,12 @@ type ReloadError struct {
 
 // Error implements the error interface
 func (e *ReloadError) Error() string {
-	var parts []string
-
 	if e.Failed == 0 {
 		return "configuration reload completed successfully"
 	}
 
-	parts = append(parts, fmt.Sprintf("configuration reload partially failed (%d errors, %d successful):",
-		e.Failed, e.Successful))
+	parts := []string{fmt.Sprintf("configuration reload partially failed (%d errors, %d successful):",
+		e.Failed, e.Successful)}
 
 	// Report removal errors first (cleanup failures), then updates, then additions
 	parts = appendErrorSection(parts, "\nFailed to remove services:", e.RemoveErrors)
