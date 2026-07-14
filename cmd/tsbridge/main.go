@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -21,12 +20,6 @@ import (
 )
 
 var version = "dev"
-
-// exitFunc allows tests to override os.Exit
-var exitFunc = os.Exit
-
-// loggingOnce ensures setupLogging is only called once
-var loggingOnce = &sync.Once{}
 
 // cliArgs holds parsed command-line arguments
 type cliArgs struct {
@@ -81,17 +74,11 @@ func parseCLIArgs(args []string) (*cliArgs, error) {
 
 // setupLogging configures the global logger based on the verbose flag
 func setupLogging(verbose bool) {
-	loggingOnce.Do(func() {
-		opts := &slog.HandlerOptions{
-			Level: slog.LevelInfo,
-		}
-		if verbose {
-			opts.Level = slog.LevelDebug
-		}
-		handler := slog.NewTextHandler(os.Stdout, opts)
-		logger := slog.New(handler)
-		slog.SetDefault(logger)
-	})
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	if verbose {
+		opts.Level = slog.LevelDebug
+	}
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, opts)))
 }
 
 // setupCommon configures logging and validates provider-specific flags
@@ -177,9 +164,29 @@ type Application interface {
 	Shutdown(ctx context.Context) error
 }
 
-// Allow replacing the app factory for tests.
-var newApp = func(cfg *config.Config, opts app.Options) (Application, error) {
-	return app.NewAppWithOptions(cfg, opts)
+func runApplication(application Application, sigCh <-chan os.Signal) error {
+	appErrCh := make(chan error, constants.DefaultChannelBufferSize)
+
+	go func() {
+		if err := application.Start(context.Background()); err != nil {
+			appErrCh <- fmt.Errorf("failed to start application: %w", err)
+		}
+	}()
+
+	select {
+	case sig := <-sigCh:
+		slog.Info("received signal, shutting down", "signal", sig)
+	case err := <-appErrCh:
+		return err
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), constants.DefaultShutdownTimeout)
+	defer cancel()
+
+	if err := application.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("shutdown error: %w", err)
+	}
+	return nil
 }
 
 // run executes the main application logic
@@ -217,42 +224,14 @@ func run(args *cliArgs, sigCh <-chan os.Signal) error {
 
 	// Create the application with the provider
 	slog.Debug("creating application")
-	application, err := newApp(nil, app.Options{
+	application, err := app.NewAppWithOptions(nil, app.Options{
 		Provider: configProvider,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create application: %w", err)
 	}
 
-	// Create error channel for application startup
-	appErrCh := make(chan error, constants.DefaultChannelBufferSize)
-
-	// Start the application in a goroutine to avoid blocking
-	ctx := context.Background()
-	go func() {
-		if err := application.Start(ctx); err != nil {
-			appErrCh <- fmt.Errorf("failed to start application: %w", err)
-		}
-	}()
-
-	// Wait for either signal or application error
-	select {
-	case sig := <-sigCh:
-		slog.Info("received signal, shutting down", "signal", sig)
-	case err := <-appErrCh:
-		return err
-	}
-
-	// Create shutdown context with timeout
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), constants.DefaultShutdownTimeout)
-	defer cancel()
-
-	// Call shutdown
-	if err := application.Shutdown(shutdownCtx); err != nil {
-		return fmt.Errorf("shutdown error: %w", err)
-	}
-
-	return nil
+	return runApplication(application, sigCh)
 }
 
 func main() {
@@ -260,10 +239,10 @@ func main() {
 	if err != nil {
 		// Check if this is a help request
 		if err == flag.ErrHelp {
-			exitFunc(0)
+			os.Exit(0)
 		}
 		// Flag parsing errors already printed by flag package
-		exitFunc(2)
+		os.Exit(2)
 	}
 
 	// Setup signal handling for graceful shutdown
@@ -272,8 +251,8 @@ func main() {
 
 	if err := run(args, sigCh); err != nil {
 		slog.Error("error", "error", err)
-		exitFunc(1)
+		os.Exit(1)
 	}
 
-	exitFunc(0)
+	os.Exit(0)
 }
