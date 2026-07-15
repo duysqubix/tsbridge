@@ -7,8 +7,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/jtdowney/tsbridge/internal/errors"
 )
 
 // TestFixture represents a reusable test configuration
@@ -268,7 +266,6 @@ func TestFileProviderErrorHandling(t *testing.T) {
 	tests := []struct {
 		name         string
 		setupFunc    func() (string, func())
-		wantErrType  errors.ErrorType
 		wantContains []string
 	}{
 		{
@@ -276,7 +273,6 @@ func TestFileProviderErrorHandling(t *testing.T) {
 			setupFunc: func() (string, func()) {
 				return "/non/existent/file.toml", func() {}
 			},
-			wantErrType:  errors.ErrTypeConfig,
 			wantContains: []string{"file provider", "loading config file"},
 		},
 		{
@@ -293,7 +289,6 @@ missing bracket
 				}
 				return configPath, func() {}
 			},
-			wantErrType:  errors.ErrTypeConfig,
 			wantContains: []string{"file provider", "loading config file"},
 		},
 		{
@@ -301,7 +296,6 @@ missing bracket
 			setupFunc: func() (string, func()) {
 				return "", func() {}
 			},
-			wantErrType:  errors.ErrTypeValidation,
 			wantContains: []string{"file provider", "config path cannot be empty"},
 		},
 	}
@@ -316,11 +310,6 @@ missing bracket
 
 			if err == nil {
 				t.Fatal("expected error, got nil")
-			}
-
-			// Check error type
-			if gotType := errors.GetType(err); gotType != tt.wantErrType {
-				t.Errorf("GetType() = %v, want %v", gotType, tt.wantErrType)
 			}
 
 			// Check error message contains expected strings
@@ -373,11 +362,6 @@ func TestProviderValidationErrorContext(t *testing.T) {
 
 		if err == nil {
 			t.Fatal("expected error, got nil")
-		}
-
-		// Should be a validation error
-		if errors.GetType(err) != errors.ErrTypeValidation {
-			t.Errorf("expected validation error, got %v", errors.GetType(err))
 		}
 
 		// Should contain "file provider" in the message
@@ -558,14 +542,12 @@ func TestProviderErrorBehavior(t *testing.T) {
 	tests := []struct {
 		name           string
 		createProvider func(t *testing.T) (Provider, func())
-		wantErrType    errors.ErrorType
 	}{
 		{
 			name: "FileProvider with missing file",
 			createProvider: func(t *testing.T) (Provider, func()) {
 				return NewFileProvider("/non/existent/file.toml"), func() {}
 			},
-			wantErrType: errors.ErrTypeConfig,
 		},
 		{
 			name: "FileProvider with invalid config",
@@ -585,7 +567,6 @@ name = "test-service"
 
 				return NewFileProvider(configPath), func() {}
 			},
-			wantErrType: errors.ErrTypeConfig, // Due to wrapping in ProcessLoadedConfigWithProvider
 		},
 	}
 
@@ -598,11 +579,6 @@ name = "test-service"
 			_, err := provider.Load(ctx)
 			if err == nil {
 				t.Fatal("expected error, got nil")
-			}
-
-			// Check error type
-			if gotType := errors.GetType(err); gotType != tt.wantErrType {
-				t.Errorf("GetType() = %v, want %v", gotType, tt.wantErrType)
 			}
 
 			// Check that error contains provider name
@@ -758,12 +734,6 @@ tags = ["tag:test"]
 				_, err := provider.Load(ctx)
 				if err == nil {
 					t.Fatal("expected validation error, got nil")
-				}
-
-				// Currently returns config error due to wrapping in ProcessLoadedConfigWithProvider
-				// TODO: This should be a validation error
-				if errors.GetType(err) != errors.ErrTypeConfig {
-					t.Errorf("expected config error type, got %v", errors.GetType(err))
 				}
 
 				if !strings.Contains(err.Error(), errorFixture.ExpectError) {

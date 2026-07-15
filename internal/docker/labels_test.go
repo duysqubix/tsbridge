@@ -7,7 +7,6 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/jtdowney/tsbridge/internal/config"
-	tserrors "github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -106,7 +105,6 @@ func TestDockerInvalidDurationSurfacesError(t *testing.T) {
 
 		_, err := provider.parseServiceConfig(c)
 		require.Error(t, err)
-		assert.True(t, tserrors.IsValidation(err))
 		assert.Contains(t, err.Error(), "service.startup_timeout")
 	})
 
@@ -119,9 +117,44 @@ func TestDockerInvalidDurationSurfacesError(t *testing.T) {
 
 		err := provider.parseGlobalConfig(&c, &config.Config{})
 		require.Error(t, err)
-		assert.True(t, tserrors.IsValidation(err))
 		assert.Contains(t, err.Error(), "global.write_timeout")
 	})
+}
+
+func TestDockerInvalidTypedLabelsSurfaceErrors(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		parse func(*labelParser)
+	}{
+		{
+			name:  "boolean",
+			value: "tru",
+			parse: func(parser *labelParser) {
+				assert.Nil(t, parser.getBool("value"))
+			},
+		},
+		{
+			name:  "byte size",
+			value: "10MBB",
+			parse: func(parser *labelParser) {
+				assert.Nil(t, parser.getByteSize("value"))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parser := newLabelParser(map[string]string{"tsbridge.value": tt.value}, "tsbridge")
+
+			tt.parse(parser)
+
+			err := parser.err()
+			require.Error(t, err)
+			assert.ErrorContains(t, err, `"value"`)
+			assert.ErrorContains(t, err, tt.value)
+		})
+	}
 }
 
 func TestParseBool(t *testing.T) {
@@ -167,59 +200,6 @@ func TestParseBool(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := parseBool(tt.value)
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				if tt.expected == nil {
-					assert.Nil(t, result)
-				} else {
-					require.NotNil(t, result)
-					assert.Equal(t, *tt.expected, *result)
-				}
-			}
-		})
-	}
-}
-
-func TestParseInt(t *testing.T) {
-	tests := []struct {
-		name     string
-		value    string
-		expected *int
-		wantErr  bool
-	}{
-		{
-			name:     "valid int",
-			value:    "42",
-			expected: new(42),
-		},
-		{
-			name:     "zero",
-			value:    "0",
-			expected: new(0),
-		},
-		{
-			name:     "negative int",
-			value:    "-5",
-			expected: new(-5),
-		},
-		{
-			name:     "empty string",
-			value:    "",
-			expected: nil,
-		},
-		{
-			name:     "invalid int",
-			value:    "not-a-number",
-			expected: nil,
-			wantErr:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := parseInt(tt.value)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -300,12 +280,6 @@ func TestLabelParser(t *testing.T) {
 		assert.True(t, *result)
 
 		result = parser.getBool("nonexistent")
-		assert.Nil(t, result)
-	})
-
-	t.Run("getInt", func(t *testing.T) {
-		// No int fields in current config, just test nonexistent key
-		result := parser.getInt("nonexistent")
 		assert.Nil(t, result)
 	})
 

@@ -62,14 +62,10 @@ func (p *labelParser) getString(key string) string {
 // getBool gets a boolean pointer from labels
 func (p *labelParser) getBool(key string) *bool {
 	value := p.getString(key)
-	result, _ := parseBool(value)
-	return result
-}
-
-// getInt gets an integer pointer from labels
-func (p *labelParser) getInt(key string) *int {
-	value := p.getString(key)
-	result, _ := parseInt(value)
+	result, err := parseBool(value)
+	if err != nil {
+		p.errs = append(p.errs, fmt.Errorf("invalid boolean for %q (%q): %w", key, value, err))
+	}
 	return result
 }
 
@@ -98,10 +94,7 @@ func (p *labelParser) getByteSize(key string) *int64 {
 	}
 	result, err := config.ParseByteSizeString(value)
 	if err != nil {
-		slog.Warn("failed to parse ByteSize from Docker label",
-			"key", key,
-			"value", value,
-			"error", err)
+		p.errs = append(p.errs, fmt.Errorf("invalid byte size for %q (%q): %w", key, value, err))
 		return nil
 	}
 	return &result
@@ -338,18 +331,6 @@ func parseBool(value string) (*bool, error) {
 		return nil, err
 	}
 	return &b, nil
-}
-
-// parseInt parses an integer string and returns a pointer to int
-func parseInt(value string) (*int, error) {
-	if value == "" {
-		return nil, nil
-	}
-	i, err := strconv.Atoi(value)
-	if err != nil {
-		return nil, err
-	}
-	return &i, nil
 }
 
 // parseStringSlice parses a delimited string and returns a slice of strings

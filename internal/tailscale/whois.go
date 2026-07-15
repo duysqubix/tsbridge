@@ -17,9 +17,9 @@ type WhoisClientAdapter struct {
 	service string
 }
 
-// NewWhoisClientAdapter creates a new adapter for the given TSNetServer. The
-// collector and service name record whois lookup duration; metrics may be nil
-// to disable recording.
+// NewWhoisClientAdapter creates an adapter for the given TSNetServer. The
+// collector and service name record successful whois lookup duration; metrics
+// may be nil to disable recording.
 func NewWhoisClientAdapter(server tsnetpkg.TSNetServer, metrics *metrics.Collector, service string) *WhoisClientAdapter {
 	return &WhoisClientAdapter{server: server, metrics: metrics, service: service}
 }
@@ -32,11 +32,11 @@ func (w *WhoisClientAdapter) WhoIs(ctx context.Context, remoteAddr string) (*api
 		return nil, fmt.Errorf("getting local client: %w", err)
 	}
 
-	// Time the actual lookup; the middleware caches above us, so this measures
-	// real lookups rather than cache hits.
+	// Time successful backend lookups; the middleware caches above us, so this
+	// excludes cache hits and failed retry attempts.
 	start := time.Now()
 	resp, err := lc.WhoIs(ctx, remoteAddr)
-	if w.metrics != nil {
+	if err == nil && w.metrics != nil {
 		w.metrics.RecordWhoisDuration(w.service, time.Since(start))
 	}
 	return resp, err

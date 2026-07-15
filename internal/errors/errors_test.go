@@ -2,7 +2,6 @@ package errors
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
 )
@@ -21,12 +20,6 @@ func TestErrorTypes(t *testing.T) {
 			wantMsg:  "validation error: invalid configuration",
 		},
 		{
-			name:     "network error",
-			err:      NewNetworkError("connection refused"),
-			wantType: ErrTypeNetwork,
-			wantMsg:  "network error: connection refused",
-		},
-		{
 			name:     "configuration error",
 			err:      NewConfigError("missing required field"),
 			wantType: ErrTypeConfig,
@@ -37,12 +30,6 @@ func TestErrorTypes(t *testing.T) {
 			err:      NewResourceError("port already in use"),
 			wantType: ErrTypeResource,
 			wantMsg:  "resource error: port already in use",
-		},
-		{
-			name:     "internal error",
-			err:      NewInternalError("unexpected state"),
-			wantType: ErrTypeInternal,
-			wantMsg:  "internal error: unexpected state",
 		},
 	}
 
@@ -101,7 +88,7 @@ func TestWrap(t *testing.T) {
 		{
 			name:     "wrap as internal error",
 			err:      WrapInternal(baseErr, "unexpected failure"),
-			wantType: ErrTypeInternal,
+			wantType: errTypeInternal,
 			wantMsg:  "internal error: unexpected failure: base error",
 		},
 	}
@@ -125,353 +112,6 @@ func TestWrap(t *testing.T) {
 			// Check that original error is preserved
 			if !errors.Is(tt.err, baseErr) {
 				t.Error("wrapped error should preserve original error")
-			}
-		})
-	}
-}
-
-func TestIsType(t *testing.T) {
-	validationErr := NewValidationError("test")
-	networkErr := NewNetworkError("test")
-	configErr := NewConfigError("test")
-	resourceErr := NewResourceError("test")
-	internalErr := NewInternalError("test")
-	wrappedValidation := fmt.Errorf("wrapped: %w", validationErr)
-	wrappedConfig := fmt.Errorf("wrapped: %w", configErr)
-	wrappedResource := fmt.Errorf("wrapped: %w", resourceErr)
-	wrappedInternal := fmt.Errorf("wrapped: %w", internalErr)
-
-	tests := []struct {
-		name    string
-		err     error
-		checkFn func(error) bool
-		want    bool
-	}{
-		{
-			name:    "direct validation error",
-			err:     validationErr,
-			checkFn: IsValidation,
-			want:    true,
-		},
-		{
-			name:    "wrapped validation error",
-			err:     wrappedValidation,
-			checkFn: IsValidation,
-			want:    true,
-		},
-		{
-			name:    "network error is not validation",
-			err:     networkErr,
-			checkFn: IsValidation,
-			want:    false,
-		},
-		{
-			name:    "direct network error",
-			err:     networkErr,
-			checkFn: IsNetwork,
-			want:    true,
-		},
-		{
-			name:    "direct config error",
-			err:     configErr,
-			checkFn: IsConfig,
-			want:    true,
-		},
-		{
-			name:    "wrapped config error",
-			err:     wrappedConfig,
-			checkFn: IsConfig,
-			want:    true,
-		},
-		{
-			name:    "validation error is not config",
-			err:     validationErr,
-			checkFn: IsConfig,
-			want:    false,
-		},
-		{
-			name:    "direct resource error",
-			err:     resourceErr,
-			checkFn: IsResource,
-			want:    true,
-		},
-		{
-			name:    "wrapped resource error",
-			err:     wrappedResource,
-			checkFn: IsResource,
-			want:    true,
-		},
-		{
-			name:    "network error is not resource",
-			err:     networkErr,
-			checkFn: IsResource,
-			want:    false,
-		},
-		{
-			name:    "direct internal error",
-			err:     internalErr,
-			checkFn: IsInternal,
-			want:    true,
-		},
-		{
-			name:    "wrapped internal error",
-			err:     wrappedInternal,
-			checkFn: IsInternal,
-			want:    true,
-		},
-		{
-			name:    "config error is not internal",
-			err:     configErr,
-			checkFn: IsInternal,
-			want:    false,
-		},
-		{
-			name:    "nil error",
-			err:     nil,
-			checkFn: IsValidation,
-			want:    false,
-		},
-		{
-			name:    "nil error for config check",
-			err:     nil,
-			checkFn: IsConfig,
-			want:    false,
-		},
-		{
-			name:    "nil error for resource check",
-			err:     nil,
-			checkFn: IsResource,
-			want:    false,
-		},
-		{
-			name:    "nil error for internal check",
-			err:     nil,
-			checkFn: IsInternal,
-			want:    false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.checkFn(tt.err); got != tt.want {
-				t.Errorf("checkFn() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGetType(t *testing.T) {
-	tests := []struct {
-		name     string
-		err      error
-		wantType ErrorType
-	}{
-		{
-			name:     "validation error",
-			err:      NewValidationError("test"),
-			wantType: ErrTypeValidation,
-		},
-		{
-			name:     "wrapped validation error",
-			err:      fmt.Errorf("context: %w", NewValidationError("test")),
-			wantType: ErrTypeValidation,
-		},
-		{
-			name:     "standard error",
-			err:      errors.New("standard error"),
-			wantType: ErrTypeUnknown,
-		},
-		{
-			name:     "nil error",
-			err:      nil,
-			wantType: ErrTypeUnknown,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetType(tt.err); got != tt.wantType {
-				t.Errorf("GetType() = %v, want %v", got, tt.wantType)
-			}
-		})
-	}
-}
-
-func TestHTTPStatus(t *testing.T) {
-	tests := []struct {
-		name       string
-		err        error
-		wantStatus int
-	}{
-		{
-			name:       "validation error returns bad request",
-			err:        NewValidationError("invalid input"),
-			wantStatus: 400,
-		},
-		{
-			name:       "network error returns bad gateway",
-			err:        NewNetworkError("connection failed"),
-			wantStatus: 502,
-		},
-		{
-			name:       "resource error returns service unavailable",
-			err:        NewResourceError("no resources"),
-			wantStatus: 503,
-		},
-		{
-			name:       "config error returns internal server error",
-			err:        NewConfigError("bad config"),
-			wantStatus: 500,
-		},
-		{
-			name:       "internal error returns internal server error",
-			err:        NewInternalError("internal failure"),
-			wantStatus: 500,
-		},
-		{
-			name:       "unknown error returns internal server error",
-			err:        errors.New("unknown"),
-			wantStatus: 500,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := HTTPStatus(tt.err); got != tt.wantStatus {
-				t.Errorf("HTTPStatus() = %v, want %v", got, tt.wantStatus)
-			}
-		})
-	}
-}
-
-func TestErrorWithRetry(t *testing.T) {
-	err := NewNetworkError("connection failed")
-	retryable := WithRetry(err, 3, 5)
-
-	// Check error message includes retry info
-	want := "network error: connection failed (attempt 3/5)"
-	if got := retryable.Error(); got != want {
-		t.Errorf("Error() = %q, want %q", got, want)
-	}
-
-	// Check we can extract retry info
-	var retryErr *RetryableError
-	if !errors.As(retryable, &retryErr) {
-		t.Fatal("error should be of type *RetryableError")
-	}
-
-	if retryErr.Attempt != 3 {
-		t.Errorf("Attempt = %d, want 3", retryErr.Attempt)
-	}
-	if retryErr.MaxAttempts != 5 {
-		t.Errorf("MaxAttempts = %d, want 5", retryErr.MaxAttempts)
-	}
-
-	// Check IsRetryable
-	if !IsRetryable(retryable) {
-		t.Error("WithRetry error should be retryable")
-	}
-
-	// Check original error is preserved
-	if !errors.Is(retryable, err) {
-		t.Error("retryable error should preserve original error")
-	}
-}
-
-func TestGetRetryInfo(t *testing.T) {
-	tests := []struct {
-		name            string
-		err             error
-		wantAttempt     int
-		wantMaxAttempts int
-		wantOk          bool
-	}{
-		{
-			name:            "retryable error returns info",
-			err:             WithRetry(NewNetworkError("test"), 2, 5),
-			wantAttempt:     2,
-			wantMaxAttempts: 5,
-			wantOk:          true,
-		},
-		{
-			name:            "wrapped retryable error returns info",
-			err:             fmt.Errorf("context: %w", WithRetry(NewNetworkError("test"), 3, 10)),
-			wantAttempt:     3,
-			wantMaxAttempts: 10,
-			wantOk:          true,
-		},
-		{
-			name:            "non-retryable error returns false",
-			err:             NewNetworkError("test"),
-			wantAttempt:     0,
-			wantMaxAttempts: 0,
-			wantOk:          false,
-		},
-		{
-			name:            "nil error returns false",
-			err:             nil,
-			wantAttempt:     0,
-			wantMaxAttempts: 0,
-			wantOk:          false,
-		},
-		{
-			name:            "standard error returns false",
-			err:             errors.New("standard error"),
-			wantAttempt:     0,
-			wantMaxAttempts: 0,
-			wantOk:          false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotAttempt, gotMaxAttempts, gotOk := GetRetryInfo(tt.err)
-
-			if gotAttempt != tt.wantAttempt {
-				t.Errorf("GetRetryInfo() attempt = %v, want %v", gotAttempt, tt.wantAttempt)
-			}
-			if gotMaxAttempts != tt.wantMaxAttempts {
-				t.Errorf("GetRetryInfo() maxAttempts = %v, want %v", gotMaxAttempts, tt.wantMaxAttempts)
-			}
-			if gotOk != tt.wantOk {
-				t.Errorf("GetRetryInfo() ok = %v, want %v", gotOk, tt.wantOk)
-			}
-		})
-	}
-}
-
-func TestIsRetryableEdgeCases(t *testing.T) {
-	tests := []struct {
-		name string
-		err  error
-		want bool
-	}{
-		{
-			name: "nil error is not retryable",
-			err:  nil,
-			want: false,
-		},
-		{
-			name: "standard error is not retryable",
-			err:  errors.New("standard error"),
-			want: false,
-		},
-		{
-			name: "typed error without retry is not retryable",
-			err:  NewNetworkError("not retryable"),
-			want: false,
-		},
-		{
-			name: "deeply wrapped retryable error is retryable",
-			err:  fmt.Errorf("outer: %w", fmt.Errorf("inner: %w", WithRetry(NewNetworkError("test"), 1, 3))),
-			want: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := IsRetryable(tt.err); got != tt.want {
-				t.Errorf("IsRetryable() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -572,11 +212,6 @@ func TestServiceStartupError(t *testing.T) {
 
 		err := NewServiceStartupError(1, 0, 1, failures)
 
-		// Should be internal error type
-		if !IsInternal(err) {
-			t.Error("expected ServiceStartupError to be classified as internal error")
-		}
-
 		// Should be unwrappable to get the actual error
 		var startupErr *ServiceStartupError
 		if !errors.As(err, &startupErr) {
@@ -645,7 +280,6 @@ func TestProviderErrorWrapping(t *testing.T) {
 		operation    string
 		baseErr      error
 		wrapFunc     func(error, string, string) error
-		wantType     ErrorType
 		wantContains []string
 	}{
 		{
@@ -656,7 +290,6 @@ func TestProviderErrorWrapping(t *testing.T) {
 			wrapFunc: func(err error, provider, operation string) error {
 				return WrapProviderError(err, provider, ErrTypeConfig, operation)
 			},
-			wantType:     ErrTypeConfig,
 			wantContains: []string{"file provider", "loading config", "file not found"},
 		},
 		{
@@ -667,7 +300,6 @@ func TestProviderErrorWrapping(t *testing.T) {
 			wrapFunc: func(err error, provider, operation string) error {
 				return WrapProviderError(err, provider, ErrTypeResource, operation)
 			},
-			wantType:     ErrTypeResource,
 			wantContains: []string{"docker provider", "connecting to Docker", "connection refused"},
 		},
 		{
@@ -678,7 +310,6 @@ func TestProviderErrorWrapping(t *testing.T) {
 			wrapFunc: func(err error, provider, operation string) error {
 				return WrapProviderError(err, provider, ErrTypeValidation, operation)
 			},
-			wantType:     ErrTypeValidation,
 			wantContains: []string{"docker provider", "parsing service config", "invalid backend address"},
 		},
 	}
@@ -686,11 +317,6 @@ func TestProviderErrorWrapping(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.wrapFunc(tt.baseErr, tt.provider, tt.operation)
-
-			// Check error type
-			if gotType := GetType(err); gotType != tt.wantType {
-				t.Errorf("GetType() = %v, want %v", gotType, tt.wantType)
-			}
 
 			// Check error message contains expected strings
 			errMsg := err.Error()
@@ -735,9 +361,6 @@ func TestNewProviderError(t *testing.T) {
 				t.Errorf("error = %q, want %q", err.Error(), tt.wantError)
 			}
 
-			if GetType(err) != tt.errType {
-				t.Errorf("GetType() = %v, want %v", GetType(err), tt.errType)
-			}
 		})
 	}
 }

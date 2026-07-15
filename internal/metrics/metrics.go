@@ -71,7 +71,7 @@ func NewCollector() *Collector {
 		WhoisDuration: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "tsbridge_whois_duration_seconds",
-				Help:    "Whois lookup duration in seconds",
+				Help:    "Successful Whois lookup duration in seconds",
 				Buckets: prometheus.DefBuckets,
 			},
 			[]string{"service"},
@@ -151,7 +151,7 @@ func (c *Collector) RecordError(service, errorType string) {
 	c.ErrorsTotal.WithLabelValues(service, errorType).Inc()
 }
 
-// RecordWhoisDuration records the duration of a whois lookup
+// RecordWhoisDuration records the duration of a successful whois lookup.
 func (c *Collector) RecordWhoisDuration(service string, duration time.Duration) {
 	c.WhoisDuration.WithLabelValues(service).Observe(duration.Seconds())
 }

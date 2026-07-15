@@ -6,7 +6,6 @@ package errors
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 )
@@ -15,9 +14,6 @@ import (
 type ErrorType string
 
 const (
-	// ErrTypeUnknown is for errors that don't fit other categories
-	ErrTypeUnknown ErrorType = "unknown"
-
 	// ErrTypeValidation is for input validation errors
 	ErrTypeValidation ErrorType = "validation"
 
@@ -30,8 +26,8 @@ const (
 	// ErrTypeResource is for resource availability errors (ports, files, etc)
 	ErrTypeResource ErrorType = "resource"
 
-	// ErrTypeInternal is for internal/unexpected errors
-	ErrTypeInternal ErrorType = "internal"
+	// errTypeInternal is for internal/unexpected errors
+	errTypeInternal ErrorType = "internal"
 )
 
 // Error is the standard error type with classification
@@ -65,11 +61,6 @@ func NewValidationError(message string) error {
 	return &Error{Type: ErrTypeValidation, Message: message}
 }
 
-// NewNetworkError creates a new network error
-func NewNetworkError(message string) error {
-	return &Error{Type: ErrTypeNetwork, Message: message}
-}
-
 // NewNetworkErrorWithStatus creates a new network error with HTTP status code
 func NewNetworkErrorWithStatus(message string, statusCode int) error {
 	return &Error{Type: ErrTypeNetwork, Message: message, HTTPStatusCode: statusCode}
@@ -83,11 +74,6 @@ func NewConfigError(message string) error {
 // NewResourceError creates a new resource error
 func NewResourceError(message string) error {
 	return &Error{Type: ErrTypeResource, Message: message}
-}
-
-// NewInternalError creates a new internal error
-func NewInternalError(message string) error {
-	return &Error{Type: ErrTypeInternal, Message: message}
 }
 
 // WrapValidation wraps an error as a validation error
@@ -112,109 +98,13 @@ func WrapResource(err error, message string) error {
 
 // WrapInternal wraps an error as an internal error
 func WrapInternal(err error, message string) error {
-	return &Error{Type: ErrTypeInternal, Message: message, Err: err}
+	return &Error{Type: errTypeInternal, Message: message, Err: err}
 }
 
-// IsValidation checks if an error is a validation error
-func IsValidation(err error) bool {
-	return isType(err, ErrTypeValidation)
-}
-
-// IsNetwork checks if an error is a network error
+// IsNetwork checks if an error is a network error.
 func IsNetwork(err error) bool {
-	return isType(err, ErrTypeNetwork)
-}
-
-// IsConfig checks if an error is a configuration error
-func IsConfig(err error) bool {
-	return isType(err, ErrTypeConfig)
-}
-
-// IsResource checks if an error is a resource error
-func IsResource(err error) bool {
-	return isType(err, ErrTypeResource)
-}
-
-// IsInternal checks if an error is an internal error
-func IsInternal(err error) bool {
-	return isType(err, ErrTypeInternal)
-}
-
-// isType checks if an error is of a specific type
-func isType(err error, errType ErrorType) bool {
-	return GetType(err) == errType
-}
-
-// GetType returns the error type for an error
-func GetType(err error) ErrorType {
-	if err == nil {
-		return ErrTypeUnknown
-	}
-	var e *Error
-	if errors.As(err, &e) {
-		return e.Type
-	}
-	return ErrTypeUnknown
-}
-
-// HTTPStatus returns the appropriate HTTP status code for an error
-func HTTPStatus(err error) int {
-	switch GetType(err) {
-	case ErrTypeValidation:
-		return http.StatusBadRequest
-	case ErrTypeNetwork:
-		return http.StatusBadGateway
-	case ErrTypeResource:
-		return http.StatusServiceUnavailable
-	case ErrTypeConfig, ErrTypeInternal:
-		return http.StatusInternalServerError
-	default:
-		return http.StatusInternalServerError
-	}
-}
-
-// RetryableError wraps an error with retry information
-type RetryableError struct {
-	Err         error
-	Attempt     int
-	MaxAttempts int
-}
-
-// Error implements the error interface
-func (r *RetryableError) Error() string {
-	return fmt.Sprintf("%s (attempt %d/%d)", r.Err.Error(), r.Attempt, r.MaxAttempts)
-}
-
-// Unwrap allows errors.Is and errors.As to work
-func (r *RetryableError) Unwrap() error {
-	return r.Err
-}
-
-// WithRetry wraps an error with retry information
-func WithRetry(err error, attempt, maxAttempts int) error {
-	return &RetryableError{
-		Err:         err,
-		Attempt:     attempt,
-		MaxAttempts: maxAttempts,
-	}
-}
-
-// IsRetryable checks if an error is marked as retryable
-func IsRetryable(err error) bool {
-	if err == nil {
-		return false
-	}
-	var r *RetryableError
-	return errors.As(err, &r)
-}
-
-// GetRetryInfo extracts retry information from an error
-func GetRetryInfo(err error) (attempt, maxAttempts int, ok bool) {
-	var r *RetryableError
-	if errors.As(err, &r) {
-		return r.Attempt, r.MaxAttempts, true
-	}
-	return 0, 0, false
+	var typedErr *Error
+	return errors.As(err, &typedErr) && typedErr.Type == ErrTypeNetwork
 }
 
 // ServiceStartupError represents the result of attempting to start multiple services
@@ -251,7 +141,7 @@ func NewServiceStartupError(total, successful, failed int, failures map[string]e
 	}
 
 	return &Error{
-		Type:    ErrTypeInternal,
+		Type:    errTypeInternal,
 		Message: "service startup",
 		Err: &ServiceStartupError{
 			Total:      total,
@@ -269,16 +159,16 @@ func AsServiceStartupError(err error) (*ServiceStartupError, bool) {
 	return startupErr, ok
 }
 
-// ProviderError represents an error from a configuration provider.
+// providerError represents an error from a configuration provider.
 // It includes the provider name for context in error messages.
-type ProviderError struct {
+type providerError struct {
 	Provider string
 	Message  string
 	Cause    error
 }
 
 // Error implements the error interface
-func (e *ProviderError) Error() string {
+func (e *providerError) Error() string {
 	if e.Cause != nil {
 		return e.Provider + " provider: " + e.Message + ": " + e.Cause.Error()
 	}
@@ -286,7 +176,7 @@ func (e *ProviderError) Error() string {
 }
 
 // Unwrap returns the underlying error
-func (e *ProviderError) Unwrap() error {
+func (e *providerError) Unwrap() error {
 	return e.Cause
 }
 
@@ -294,7 +184,7 @@ func (e *ProviderError) Unwrap() error {
 func NewProviderError(provider string, errType ErrorType, message string) error {
 	return &Error{
 		Type: errType,
-		Err: &ProviderError{
+		Err: &providerError{
 			Provider: provider,
 			Message:  message,
 		},
@@ -308,7 +198,7 @@ func WrapProviderError(err error, provider string, errType ErrorType, operation 
 	}
 	return &Error{
 		Type: errType,
-		Err: &ProviderError{
+		Err: &providerError{
 			Provider: provider,
 			Message:  operation,
 			Cause:    err,
@@ -316,15 +206,15 @@ func WrapProviderError(err error, provider string, errType ErrorType, operation 
 	}
 }
 
-// TimeoutError represents a timeout during an operation
-type TimeoutError struct {
+// timeoutError represents a timeout during an operation
+type timeoutError struct {
 	Operation string
 	Timeout   time.Duration
 	Cause     error
 }
 
 // Error implements the error interface
-func (e *TimeoutError) Error() string {
+func (e *timeoutError) Error() string {
 	if e.Cause != nil {
 		return fmt.Sprintf("%s timed out after %v: %v", e.Operation, e.Timeout, e.Cause)
 	}
@@ -332,7 +222,7 @@ func (e *TimeoutError) Error() string {
 }
 
 // Unwrap returns the underlying error
-func (e *TimeoutError) Unwrap() error {
+func (e *timeoutError) Unwrap() error {
 	return e.Cause
 }
 
@@ -341,22 +231,9 @@ func NewTimeoutError(operation string, timeout time.Duration) error {
 	return &Error{
 		Type:    ErrTypeResource,
 		Message: "operation timeout",
-		Err: &TimeoutError{
+		Err: &timeoutError{
 			Operation: operation,
 			Timeout:   timeout,
-		},
-	}
-}
-
-// WrapTimeoutError wraps an error as a timeout error
-func WrapTimeoutError(err error, operation string, timeout time.Duration) error {
-	return &Error{
-		Type:    ErrTypeResource,
-		Message: "operation timeout",
-		Err: &TimeoutError{
-			Operation: operation,
-			Timeout:   timeout,
-			Cause:     err,
 		},
 	}
 }
@@ -366,6 +243,6 @@ func IsTimeout(err error) bool {
 	if err == nil {
 		return false
 	}
-	var timeoutErr *TimeoutError
+	var timeoutErr *timeoutError
 	return errors.As(err, &timeoutErr)
 }

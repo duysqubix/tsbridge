@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -2204,9 +2203,6 @@ func TestLoadConfigErrorTypes(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error for nonexistent file")
 		}
-		if !errors.IsConfig(err) {
-			t.Errorf("expected config error, got %T", err)
-		}
 	})
 
 	t.Run("invalid TOML returns config error", func(t *testing.T) {
@@ -2218,9 +2214,6 @@ func TestLoadConfigErrorTypes(t *testing.T) {
 		_, err = Load(configPath)
 		if err == nil {
 			t.Fatal("expected error for invalid TOML")
-		}
-		if !errors.IsConfig(err) {
-			t.Errorf("expected config error, got %T", err)
 		}
 	})
 }
@@ -2246,9 +2239,6 @@ func TestValidateConfigErrorTypes(t *testing.T) {
 			t.Fatal("expected validation error")
 		}
 
-		if !errors.IsValidation(err) {
-			t.Errorf("expected validation error, got %v", err)
-		}
 	})
 }
 

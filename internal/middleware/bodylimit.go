@@ -19,8 +19,8 @@ func MaxBytesHandler(maxBytes int64) func(http.Handler) http.Handler {
 				return
 			}
 
-			// Wrap the body with MaxBytesReader. The handler is responsible for
-			// turning the resulting *http.MaxBytesError into a 413.
+			// Wrap streamed bodies whose size is not known from Content-Length.
+			// Reverse-proxy read failures preserve MaxBytesError and return 413.
 			r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 
 			next.ServeHTTP(w, r)

@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -22,9 +23,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/jtdowney/tsbridge/internal/constants"
-	"github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/jtdowney/tsbridge/internal/funnel"
 	"github.com/jtdowney/tsbridge/internal/metrics"
+	"github.com/jtdowney/tsbridge/internal/middleware"
 )
 
 // defaultTestTransportConfig returns a TransportConfig with reasonable test defaults
@@ -807,73 +808,27 @@ func TestProxyErrorTypes(t *testing.T) {
 	}
 }
 
-func TestErrorHandlerUsesCorrectStatus(t *testing.T) {
-	tests := []struct {
-		name       string
-		err        error
-		wantStatus int
-	}{
-		{
-			name:       "network error returns bad gateway",
-			err:        errors.NewNetworkError("connection refused"),
-			wantStatus: http.StatusBadGateway,
-		},
-		{
-			name:       "validation error returns bad request",
-			err:        errors.NewValidationError("invalid request"),
-			wantStatus: http.StatusBadRequest,
-		},
-		{
-			name:       "resource error returns service unavailable",
-			err:        errors.NewResourceError("backend overloaded"),
-			wantStatus: http.StatusServiceUnavailable,
-		},
-		{
-			name:       "internal error returns internal server error",
-			err:        errors.NewInternalError("unexpected error"),
-			wantStatus: http.StatusInternalServerError,
-		},
-		{
-			name:       "network error with timeout word returns bad gateway (not a real timeout)",
-			err:        errors.NewNetworkError("request timeout"),
-			wantStatus: http.StatusBadGateway,
-		},
-		{
-			name:       "context deadline exceeded returns gateway timeout",
-			err:        context.DeadlineExceeded,
-			wantStatus: http.StatusGatewayTimeout,
-		},
-	}
+func TestStreamingBodyLimitReturnsRequestEntityTooLarge(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.Copy(io.Discard, r.Body)
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	t.Cleanup(backend.Close)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			w := httptest.NewRecorder()
+	handler, err := NewHandler(&HandlerConfig{BackendAddr: backend.URL})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, handler.Close()) })
 
-			// Create a simple error handler function
-			errorHandler := func(w http.ResponseWriter, _ *http.Request, err error) {
-				var status int
+	limited := middleware.MaxBytesHandler(4)(handler)
+	req := httptest.NewRequest(http.MethodPost, "/upload", strings.NewReader("12345"))
+	req.ContentLength = -1
+	req.TransferEncoding = []string{"chunked"}
+	rec := httptest.NewRecorder()
 
-				// Check for timeout errors using proper type assertion
-				if isTimeoutError(err) {
-					status = http.StatusGatewayTimeout
-				} else {
-					// Use error type to determine status
-					status = errors.HTTPStatus(err)
-					// Override for network errors that aren't timeouts
-					if errors.IsNetwork(err) && status != http.StatusGatewayTimeout {
-						status = http.StatusBadGateway
-					}
-				}
+	limited.ServeHTTP(rec, req)
 
-				http.Error(w, err.Error(), status)
-			}
-
-			errorHandler(w, req, tt.err)
-
-			assert.Equal(t, tt.wantStatus, w.Code)
-		})
-	}
+	assert.Equal(t, http.StatusRequestEntityTooLarge, rec.Code)
+	assert.Equal(t, "Request body too large\n", rec.Body.String())
 }
 
 // mockTimeoutError implements net.Error with Timeout() returning true
@@ -929,12 +884,12 @@ func TestImprovedTimeoutDetection(t *testing.T) {
 		},
 		{
 			name:       "generic error without 'timeout' word returns bad gateway",
-			err:        errors.NewNetworkError("connection failed"),
+			err:        errors.New("connection failed"),
 			wantStatus: http.StatusBadGateway,
 		},
 		{
 			name:       "error with 'timeout' in message but not a real timeout returns bad gateway",
-			err:        errors.NewNetworkError("timeout configuration invalid"),
+			err:        errors.New("timeout configuration invalid"),
 			wantStatus: http.StatusBadGateway,
 		},
 	}

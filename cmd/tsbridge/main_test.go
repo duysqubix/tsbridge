@@ -12,7 +12,6 @@ import (
 
 	"github.com/jtdowney/tsbridge/internal/config"
 	"github.com/jtdowney/tsbridge/internal/docker"
-	tserrors "github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -178,7 +177,6 @@ func TestCreateProvider(t *testing.T) {
 
 		assert.Nil(t, provider)
 		require.Error(t, err)
-		assert.True(t, tserrors.IsValidation(err))
 		assert.ErrorContains(t, err, "unknown provider type: unknown")
 	})
 }

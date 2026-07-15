@@ -434,12 +434,16 @@ func createErrorHandler(backendAddr string) func(http.ResponseWriter, *http.Requ
 		logger := middleware.LogWithRequestID(r.Context())
 		logger.Error("proxy error", "backend", backendAddr, "path", r.URL.Path, "error", networkErr)
 
-		// Determine status code and message
+		// Determine status code and message.
 		status := http.StatusBadGateway
 		message := "Bad Gateway"
 
-		// Check for timeout errors using proper type assertion
-		if isTimeoutError(err) {
+		var maxBytesErr *http.MaxBytesError
+		switch {
+		case goerrors.As(err, &maxBytesErr):
+			status = http.StatusRequestEntityTooLarge
+			message = "Request body too large"
+		case isTimeoutError(err):
 			status = http.StatusGatewayTimeout
 			message = "Gateway Timeout"
 		}

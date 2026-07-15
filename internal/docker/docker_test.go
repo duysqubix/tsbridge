@@ -15,7 +15,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -441,7 +440,6 @@ func TestDockerProviderErrorHandling(t *testing.T) {
 	tests := []struct {
 		name         string
 		opts         Options
-		wantErrType  errors.ErrorType
 		wantContains []string
 	}{
 		{
@@ -449,7 +447,6 @@ func TestDockerProviderErrorHandling(t *testing.T) {
 			opts: Options{
 				DockerEndpoint: "tcp://invalid-docker-host:2375",
 			},
-			wantErrType:  errors.ErrTypeResource,
 			wantContains: []string{"docker provider", "connecting to Docker"},
 		},
 	}
@@ -460,11 +457,6 @@ func TestDockerProviderErrorHandling(t *testing.T) {
 
 			if err == nil {
 				t.Skip("Docker connection succeeded unexpectedly - skipping test")
-			}
-
-			// Check error type
-			if gotType := errors.GetType(err); gotType != tt.wantErrType {
-				t.Errorf("GetType() = %v, want %v", gotType, tt.wantErrType)
 			}
 
 			// Check error message contains expected strings
@@ -483,7 +475,6 @@ func TestDockerLabelParsingErrors(t *testing.T) {
 		name         string
 		container    container.Summary
 		wantErr      bool
-		wantErrType  errors.ErrorType
 		wantContains []string
 	}{
 		{
@@ -497,7 +488,6 @@ func TestDockerLabelParsingErrors(t *testing.T) {
 				},
 			},
 			wantErr:      true,
-			wantErrType:  errors.ErrTypeValidation,
 			wantContains: []string{"docker provider", "service name is required"},
 		},
 		{
@@ -512,7 +502,6 @@ func TestDockerLabelParsingErrors(t *testing.T) {
 				},
 			},
 			wantErr:      true,
-			wantErrType:  errors.ErrTypeValidation,
 			wantContains: []string{"docker provider", "backend address could not be determined"},
 		},
 	}
@@ -528,11 +517,6 @@ func TestDockerLabelParsingErrors(t *testing.T) {
 			if tt.wantErr {
 				if err == nil {
 					t.Fatal("expected error, got nil")
-				}
-
-				// Check error type
-				if gotType := errors.GetType(err); gotType != tt.wantErrType {
-					t.Errorf("GetType() = %v, want %v", gotType, tt.wantErrType)
 				}
 
 				// Check error message contains expected strings

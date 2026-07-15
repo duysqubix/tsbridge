@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	promtestutil "github.com/prometheus/client_golang/prometheus/testutil"
@@ -459,9 +458,6 @@ func TestMetricsErrorTypes(t *testing.T) {
 			t.Fatal("expected error for duplicate registration")
 		}
 
-		if !errors.IsResource(err) {
-			t.Errorf("expected resource error, got %v", err)
-		}
 	})
 
 	t.Run("invalid address returns resource error", func(t *testing.T) {
@@ -474,9 +470,6 @@ func TestMetricsErrorTypes(t *testing.T) {
 			t.Fatal("expected error for invalid address")
 		}
 
-		if !errors.IsResource(err) {
-			t.Errorf("expected resource error, got %v", err)
-		}
 	})
 
 	t.Run("port already in use returns resource error", func(t *testing.T) {
@@ -499,9 +492,6 @@ func TestMetricsErrorTypes(t *testing.T) {
 			t.Fatal("expected error for port already in use")
 		}
 
-		if !errors.IsResource(err) {
-			t.Errorf("expected resource error, got %v", err)
-		}
 	})
 }
 
@@ -518,9 +508,6 @@ func TestCollectorRegisterError(t *testing.T) {
 		t.Fatal("expected error from failing registerer")
 	}
 
-	if !errors.IsResource(err) {
-		t.Errorf("expected resource error, got %v", err)
-	}
 }
 
 // failingRegisterer is a test implementation that always fails

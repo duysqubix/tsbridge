@@ -2,6 +2,7 @@ package tailscale
 
 import (
 	"context"
+	"errors"
 	"net/netip"
 	"testing"
 
@@ -81,7 +82,7 @@ func TestWhoisClientAdapter_PreservesFullResponse(t *testing.T) {
 }
 
 // TestWhoisClientAdapter_RecordsDuration verifies the adapter records a sample
-// to the WhoisDuration histogram for each lookup.
+// for a successful Whois lookup.
 func TestWhoisClientAdapter_RecordsDuration(t *testing.T) {
 	mockServer := tsnet.NewMockTSNetServer()
 	mockServer.LocalClientFunc = func() (tsnet.LocalClient, error) {
@@ -104,5 +105,30 @@ func TestWhoisClientAdapter_RecordsDuration(t *testing.T) {
 	}
 	if got := metric.GetHistogram().GetSampleCount(); got != 1 {
 		t.Errorf("sample count = %d, want 1", got)
+	}
+}
+
+func TestWhoisClientAdapter_DoesNotRecordFailedLookup(t *testing.T) {
+	mockServer := tsnet.NewMockTSNetServer()
+	mockServer.LocalClientFunc = func() (tsnet.LocalClient, error) {
+		return &tsnet.MockLocalClient{
+			WhoIsFunc: func(ctx context.Context, remoteAddr string) (*apitype.WhoIsResponse, error) {
+				return nil, errors.New("lookup failed")
+			},
+		}, nil
+	}
+
+	collector := metrics.NewCollector()
+	adapter := NewWhoisClientAdapter(mockServer, collector, "test-service")
+	if _, err := adapter.WhoIs(context.Background(), "100.64.0.1:12345"); err == nil {
+		t.Fatal("expected lookup error")
+	}
+
+	metric := &dto.Metric{}
+	if err := collector.WhoisDuration.WithLabelValues("test-service").(prometheus.Histogram).Write(metric); err != nil {
+		t.Fatalf("writing histogram metric: %v", err)
+	}
+	if got := metric.GetHistogram().GetSampleCount(); got != 0 {
+		t.Errorf("sample count = %d, want 0", got)
 	}
 }

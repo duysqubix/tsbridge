@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/jtdowney/tsbridge/internal/metrics"
 	"github.com/jtdowney/tsbridge/internal/tailscale"
 	"github.com/jtdowney/tsbridge/internal/testutil"
@@ -209,7 +208,6 @@ func TestAppErrorTypes(t *testing.T) {
 	t.Run("nil config returns validation error", func(t *testing.T) {
 		_, err := NewApp(nil)
 		require.Error(t, err)
-		assert.True(t, errors.IsValidation(err), "expected validation error, got %v", err)
 	})
 }
 

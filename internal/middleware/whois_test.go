@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jtdowney/tsbridge/internal/constants"
+	tserrors "github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/stretchr/testify/assert"
 	"tailscale.com/client/tailscale/apitype"
 	"tailscale.com/tailcfg"
@@ -858,6 +859,41 @@ func TestStripTailscaleHeadersWithWhois(t *testing.T) {
 			for header, want := range tt.wantSet {
 				assert.Equal(t, want, capturedHeaders.Get(header), "header %s should have real value", header)
 			}
+		})
+	}
+}
+
+func TestIsWhoisRetryableError(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{
+			name: "network 5xx",
+			err:  tserrors.NewNetworkErrorWithStatus("temporary failure", http.StatusServiceUnavailable),
+			want: true,
+		},
+		{
+			name: "network 4xx",
+			err:  tserrors.NewNetworkErrorWithStatus("permanent failure", http.StatusBadRequest),
+			want: false,
+		},
+		{
+			name: "context deadline",
+			err:  context.DeadlineExceeded,
+			want: true,
+		},
+		{
+			name: "unclassified error",
+			err:  errors.New("permanent failure"),
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, isWhoisRetryableError(tt.err))
 		})
 	}
 }
