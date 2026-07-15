@@ -397,9 +397,9 @@ func TestGenerateOrResolveAuthKeyWithServiceTags(t *testing.T) {
 		t.Errorf("expected service tags [tag:api tag:prod], got %v", req.Tags)
 	}
 
-	// Verify expiry is set to 5 minutes
-	if req.ExpirySeconds != constants.AuthKeyExpirySeconds {
-		t.Errorf("expected expiry=%d seconds, got %d", constants.AuthKeyExpirySeconds, req.ExpirySeconds)
+	// Five-minute expiry limits exposure for these single-use auth keys.
+	if req.ExpirySeconds != 5*60 {
+		t.Errorf("expected expiry=%d seconds, got %d", 5*60, req.ExpirySeconds)
 	}
 
 	// Verify reusable is false
@@ -625,10 +625,6 @@ func TestAuthKeyNonReusable(t *testing.T) {
 		t.Errorf("expected reusable=false for single-use auth keys, got %v", req.Capabilities.Devices.Create.Reusable)
 	}
 
-	// Verify expiry is set to 5 minutes
-	if req.ExpirySeconds != constants.AuthKeyExpirySeconds {
-		t.Errorf("expected expiry=%d seconds, got %d", constants.AuthKeyExpirySeconds, req.ExpirySeconds)
-	}
 }
 
 func TestAuthKeyGenerationLogging(t *testing.T) {
