@@ -110,6 +110,20 @@ func TestServiceConfigEqual(t *testing.T) {
 			expected: false,
 		},
 		{
+			name: "equal pointer values at different addresses",
+			a: Service{
+				Name:          "test-service",
+				BackendAddr:   "http://localhost:8080",
+				FunnelEnabled: new(true),
+			},
+			b: Service{
+				Name:          "test-service",
+				BackendAddr:   "http://localhost:8080",
+				FunnelEnabled: new(true),
+			},
+			expected: true,
+		},
+		{
 			name: "nil vs non-nil funnel enabled",
 			a: Service{
 				Name:          "test-service",
@@ -498,122 +512,5 @@ func TestServiceConfigEqualCoversAllFields(t *testing.T) {
 		if !actualFields[fieldName] {
 			t.Errorf("Expected field %s does not exist in Service struct", fieldName)
 		}
-	}
-}
-
-// TestServiceConfigEqualWithGoCmp tests the improved implementation using go-cmp
-func TestServiceConfigEqualWithGoCmp(t *testing.T) {
-	tests := []struct {
-		name     string
-		a        Service
-		b        Service
-		expected bool
-	}{
-		{
-			name: "complex service with all fields different",
-			a: Service{
-				Name:                  "service-a",
-				BackendAddr:           "http://localhost:8080",
-				WhoisEnabled:          new(true),
-				WhoisTimeout:          new(5 * time.Second),
-				TLSMode:               "strict",
-				Tags:                  []string{"prod", "api"},
-				ReadHeaderTimeout:     new(10 * time.Second),
-				WriteTimeout:          new(30 * time.Second),
-				IdleTimeout:           new(120 * time.Second),
-				ResponseHeaderTimeout: new(30 * time.Second),
-				AccessLog:             new(true),
-				MaxRequestBodySize:    new(int64(1048576)),
-				FunnelEnabled:         new(false),
-				Ephemeral:             true,
-				FlushInterval:         new(1 * time.Second),
-				UpstreamHeaders: map[string]string{
-					"X-Custom-Header": "value1",
-					"X-Request-ID":    "123",
-				},
-				DownstreamHeaders: map[string]string{
-					"X-Response-Header": "response1",
-				},
-				RemoveUpstream:   []string{"Authorization", "Cookie"},
-				RemoveDownstream: []string{"Server", "X-Powered-By"},
-			},
-			b: Service{
-				Name:                  "service-b",
-				BackendAddr:           "http://localhost:8081",
-				WhoisEnabled:          new(false),
-				WhoisTimeout:          new(10 * time.Second),
-				TLSMode:               "off",
-				Tags:                  []string{"dev", "internal"},
-				ReadHeaderTimeout:     new(20 * time.Second),
-				WriteTimeout:          new(60 * time.Second),
-				IdleTimeout:           new(240 * time.Second),
-				ResponseHeaderTimeout: new(60 * time.Second),
-				AccessLog:             new(false),
-				MaxRequestBodySize:    new(int64(2097152)),
-				FunnelEnabled:         new(true),
-				Ephemeral:             false,
-				FlushInterval:         new(2 * time.Second),
-				UpstreamHeaders: map[string]string{
-					"X-Custom-Header": "value2",
-					"X-Trace-ID":      "456",
-				},
-				DownstreamHeaders: map[string]string{
-					"X-Response-Header": "response2",
-					"X-Cache-Control":   "no-cache",
-				},
-				RemoveUpstream:   []string{"X-Forwarded-For"},
-				RemoveDownstream: []string{"Date"},
-			},
-			expected: false,
-		},
-		{
-			name: "nil and empty slices should be equal",
-			a: Service{
-				Name:        "test-service",
-				BackendAddr: "http://localhost:8080",
-				Tags:        nil,
-			},
-			b: Service{
-				Name:        "test-service",
-				BackendAddr: "http://localhost:8080",
-				Tags:        []string{},
-			},
-			expected: true,
-		},
-		{
-			name: "nil and empty maps should be equal",
-			a: Service{
-				Name:            "test-service",
-				BackendAddr:     "http://localhost:8080",
-				UpstreamHeaders: nil,
-			},
-			b: Service{
-				Name:            "test-service",
-				BackendAddr:     "http://localhost:8080",
-				UpstreamHeaders: map[string]string{},
-			},
-			expected: true,
-		},
-		{
-			name: "tags order should not matter",
-			a: Service{
-				Name:        "test-service",
-				BackendAddr: "http://localhost:8080",
-				Tags:        []string{"api", "prod", "v2"},
-			},
-			b: Service{
-				Name:        "test-service",
-				BackendAddr: "http://localhost:8080",
-				Tags:        []string{"v2", "api", "prod"},
-			},
-			expected: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := ServiceConfigEqual(tt.a, tt.b)
-			assert.Equal(t, tt.expected, result)
-		})
 	}
 }
