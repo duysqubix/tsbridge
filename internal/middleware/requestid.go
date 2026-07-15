@@ -2,10 +2,9 @@ package middleware
 
 import (
 	"context"
+	"crypto/rand"
 	"log/slog"
 	"net/http"
-
-	"github.com/google/uuid"
 )
 
 // requestIDKey is the context key for storing request IDs
@@ -13,13 +12,13 @@ type requestIDKey struct{}
 
 // RequestID is a middleware that ensures each request has a unique request ID.
 // If the incoming request has an X-Request-ID header, it uses that value.
-// Otherwise, it generates a new UUID. The request ID is added to the request
+// Otherwise, it generates a random token. The request ID is added to the request
 // context and included in the response headers.
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := r.Header.Get("X-Request-ID")
 		if requestID == "" {
-			requestID = uuid.New().String()
+			requestID = rand.Text()
 			// Expose the generated ID to downstream handlers.
 			r.Header.Set("X-Request-ID", requestID)
 		}

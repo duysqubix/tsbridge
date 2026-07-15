@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,21 +22,29 @@ func TestRequestID(t *testing.T) {
 			wantGenerated:     true,
 		},
 		{
+			name:              "generates distinct request IDs",
+			incomingRequestID: "",
+			wantGenerated:     true,
+		},
+		{
 			name:              "uses existing request ID from header",
 			incomingRequestID: "existing-request-id-123",
 			wantGenerated:     false,
 		},
 	}
+	generatedIDs := make(map[string]struct{})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var capturedRequestID string
+			var capturedRequestHeader string
 			var capturedContext context.Context
 
 			// Create a test handler that captures the request ID
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				capturedContext = r.Context()
 				capturedRequestID = GetRequestID(r.Context())
+				capturedRequestHeader = r.Header.Get("X-Request-ID")
 				w.WriteHeader(http.StatusOK)
 			})
 
@@ -60,11 +67,10 @@ func TestRequestID(t *testing.T) {
 			}
 
 			if tt.wantGenerated {
-				// Verify a new ID was generated (UUID format)
-				uuidRegex := regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
-				if !uuidRegex.MatchString(capturedRequestID) {
-					t.Errorf("expected UUID format, got %s", capturedRequestID)
+				if _, exists := generatedIDs[capturedRequestID]; exists {
+					t.Fatalf("generated duplicate request ID %q", capturedRequestID)
 				}
+				generatedIDs[capturedRequestID] = struct{}{}
 			} else {
 				// Verify existing ID was used
 				assert.Equal(t, tt.incomingRequestID, capturedRequestID)
@@ -75,6 +81,8 @@ func TestRequestID(t *testing.T) {
 
 			// Verify response header contains request ID
 			assert.Equal(t, capturedRequestID, rr.Header().Get("X-Request-ID"))
+			// Verify downstream handlers see the same request header.
+			assert.Equal(t, capturedRequestID, capturedRequestHeader)
 		})
 	}
 }

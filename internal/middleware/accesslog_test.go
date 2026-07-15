@@ -162,11 +162,10 @@ func TestAccessLogWithRequestIDFromContext(t *testing.T) {
 	rr := httptest.NewRecorder()
 	chain.ServeHTTP(rr, req)
 
-	// Check that log contains the generated request ID
-	logOutput := buf.String()
-	assert.Contains(t, logOutput, "request_id")
-	// Should contain a UUID pattern
-	assert.Regexp(t, `"request_id":"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"`, logOutput)
+	// Check that the log contains the generated request ID.
+	requestID := rr.Header().Get("X-Request-ID")
+	require.NotEmpty(t, requestID)
+	assert.Contains(t, buf.String(), fmt.Sprintf(`"request_id":%q`, requestID))
 }
 
 func TestAccessLogResponseWriter(t *testing.T) {
