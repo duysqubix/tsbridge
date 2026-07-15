@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/jtdowney/tsbridge/internal/constants"
 	"github.com/jtdowney/tsbridge/internal/funnel"
 	"github.com/jtdowney/tsbridge/internal/metrics"
 	"github.com/jtdowney/tsbridge/internal/middleware"
@@ -32,11 +31,11 @@ import (
 func defaultTestTransportConfig() *TransportConfig {
 	return &TransportConfig{
 		ResponseHeaderTimeout: 5 * time.Second,
-		DialTimeout:           constants.DefaultDialTimeout,
-		KeepAliveTimeout:      constants.DefaultKeepAliveTimeout,
-		IdleConnTimeout:       constants.DefaultIdleConnTimeout,
-		TLSHandshakeTimeout:   constants.DefaultTLSHandshakeTimeout,
-		ExpectContinueTimeout: constants.DefaultExpectContinueTimeout,
+		DialTimeout:           30 * time.Second,
+		KeepAliveTimeout:      30 * time.Second,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: time.Second,
 	}
 }
 

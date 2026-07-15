@@ -16,13 +16,18 @@ import (
 	"time"
 
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/constants"
 	tserrors "github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/jtdowney/tsbridge/internal/funnel"
 	"github.com/jtdowney/tsbridge/internal/metrics"
 	"github.com/jtdowney/tsbridge/internal/middleware"
 	"github.com/jtdowney/tsbridge/internal/proxy"
 	"github.com/jtdowney/tsbridge/internal/tailscale"
+)
+
+const (
+	defaultWhoisCacheSize = 1000
+	defaultWhoisCacheTTL  = 5 * time.Minute
+	serviceStopTimeout    = 5 * time.Second
 )
 
 // Registry manages all services
@@ -218,7 +223,7 @@ func (r *Registry) startService(svcCfg config.Service) (*Service, error) {
 	// Create HTTP server with timeouts
 	svc.server = &http.Server{
 		Handler:           svc.handler,
-		ReadHeaderTimeout: constants.DefaultReadHeaderTimeout, // Set default to satisfy linter
+		ReadHeaderTimeout: config.DefaultReadHeaderTimeout,
 	}
 
 	// For Funnel-enabled services, extract the real client IP from FunnelConn
@@ -348,12 +353,12 @@ func (s *Service) CreateHandler() (http.Handler, error) {
 			if s.Config.WhoisTimeout != nil {
 				whoisTimeout = *s.Config.WhoisTimeout
 			} else {
-				whoisTimeout = constants.DefaultWhoisTimeout
+				whoisTimeout = config.DefaultWhoisTimeout
 			}
 			// Create a whois client adapter for the tsnet server
 			whoisClient := tailscale.NewWhoisClientAdapter(serviceServer, s.metricsCollector, s.Config.Name)
 			// Use the whois middleware with internalized cache
-			httpHandler = middleware.Whois(whoisClient, whoisEnabled, whoisTimeout, constants.DefaultWhoisCacheSize, constants.DefaultWhoisCacheTTL)(httpHandler)
+			httpHandler = middleware.Whois(whoisClient, whoisEnabled, whoisTimeout, defaultWhoisCacheSize, defaultWhoisCacheTTL)(httpHandler)
 		}
 	}
 
@@ -406,7 +411,7 @@ func (s *Service) getMaxRequestBodySize() int64 {
 		return *s.globalConfig.Global.MaxRequestBodySize
 	}
 	// Default if no config available or not explicitly set anywhere
-	return constants.DefaultMaxRequestBodySize
+	return config.DefaultMaxRequestBodySize
 }
 
 // Stop gracefully stops the service
@@ -529,7 +534,7 @@ func (r *Registry) RemoveService(name string) error {
 	}
 
 	// Stop the service (this will close listener and handler)
-	ctx, cancel := context.WithTimeout(context.Background(), constants.ServiceStopTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), serviceStopTimeout)
 	defer cancel()
 
 	if err := svc.Stop(ctx); err != nil {
@@ -601,10 +606,10 @@ func (r *Registry) validateServiceConfig(cfg config.Service) error {
 
 	// Validate TLS mode
 	switch cfg.TLSMode {
-	case constants.TLSModeOff, constants.TLSModeAuto:
+	case config.TLSModeOff, config.TLSModeAuto:
 		// Valid modes
 	default:
-		return fmt.Errorf("invalid TLS mode: %s (must be '%s' or '%s')", cfg.TLSMode, constants.TLSModeOff, constants.TLSModeAuto)
+		return fmt.Errorf("invalid TLS mode: %s (must be '%s' or '%s')", cfg.TLSMode, config.TLSModeOff, config.TLSModeAuto)
 	}
 
 	// Validate timeout values
@@ -655,7 +660,7 @@ func (r *Registry) UpdateService(name string, newCfg config.Service) error {
 	oldConfig := oldSvc.Config
 
 	// Stop the old service
-	ctx, cancel := context.WithTimeout(context.Background(), constants.ServiceStopTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), serviceStopTimeout)
 	defer cancel()
 
 	if err := oldSvc.Stop(ctx); err != nil {

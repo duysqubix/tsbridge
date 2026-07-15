@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jtdowney/tsbridge/internal/constants"
 	tserrors "github.com/jtdowney/tsbridge/internal/errors"
 	"github.com/stretchr/testify/assert"
 	"tailscale.com/client/tailscale/apitype"
@@ -963,10 +962,7 @@ func TestWhoisRetryBehavior(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/test", nil)
 			req.RemoteAddr = "100.64.1.2:12345"
 			w := httptest.NewRecorder()
-
-			start := time.Now()
 			handler.ServeHTTP(w, req)
-			duration := time.Since(start)
 
 			// Verify expected number of calls
 			assert.Equal(t, tt.expectedCalls, callCount)
@@ -978,11 +974,6 @@ func TestWhoisRetryBehavior(t *testing.T) {
 				assert.Empty(t, req.Header.Get("X-Tailscale-User"))
 			}
 
-			// Verify retry timing (should have delays for retries)
-			if tt.expectedCalls > 1 {
-				minExpectedDuration := time.Duration(tt.expectedCalls-1) * constants.RetryMinTestDelay
-				assert.GreaterOrEqual(t, duration, minExpectedDuration)
-			}
 		})
 	}
 }

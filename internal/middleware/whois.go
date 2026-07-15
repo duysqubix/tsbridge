@@ -14,9 +14,17 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/golang-lru/v2/expirable"
-	"github.com/jtdowney/tsbridge/internal/constants"
 	tserrors "github.com/jtdowney/tsbridge/internal/errors"
 	"tailscale.com/client/tailscale/apitype"
+)
+
+const (
+	retryInitialInterval     = 100 * time.Millisecond
+	retryMaxInterval         = 2 * time.Second
+	retryMaxElapsedTime      = 10 * time.Second
+	retryMultiplier          = 2.0
+	retryRandomizationFactor = 0.1
+	retryMaxAttempts         = 2
 )
 
 var headerCleaner = strings.NewReplacer("\r", "", "\n", "")
@@ -63,13 +71,13 @@ func Whois(client WhoisClient, enabled bool, timeout time.Duration, cacheSize in
 
 func performWhoisWithRetryLogic(client WhoisClient, timeout time.Duration, r *http.Request) (*apitype.WhoIsResponse, error) {
 	b := backoff.NewExponentialBackOff()
-	b.InitialInterval = constants.RetryInitialInterval
-	b.MaxInterval = constants.RetryMaxInterval
-	b.MaxElapsedTime = constants.RetryMaxElapsedTime
-	b.Multiplier = constants.RetryMultiplier
-	b.RandomizationFactor = constants.RetryRandomizationFactor
+	b.InitialInterval = retryInitialInterval
+	b.MaxInterval = retryMaxInterval
+	b.MaxElapsedTime = retryMaxElapsedTime
+	b.Multiplier = retryMultiplier
+	b.RandomizationFactor = retryRandomizationFactor
 
-	backoffWithRetries := backoff.WithMaxRetries(b, constants.RetryMaxAttempts)
+	backoffWithRetries := backoff.WithMaxRetries(b, retryMaxAttempts)
 	ctxBackoff := backoff.WithContext(backoffWithRetries, r.Context())
 
 	var response *apitype.WhoIsResponse

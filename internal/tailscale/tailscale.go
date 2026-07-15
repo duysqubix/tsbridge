@@ -17,9 +17,14 @@ import (
 
 	"github.com/adrg/xdg"
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/constants"
 	tserrors "github.com/jtdowney/tsbridge/internal/errors"
 	tsnetpkg "github.com/jtdowney/tsbridge/internal/tsnet"
+)
+
+const (
+	certificatePrimingTimeout = 30 * time.Second
+	tsnetServerStartDelay     = 5 * time.Second
+	tsnetServerCloseTimeout   = 3 * time.Second
 )
 
 // Server wraps a tsnet.Server with tsbridge-specific functionality
@@ -102,7 +107,7 @@ func (s *Server) Listen(svc config.Service, tlsMode string, funnelEnabled bool) 
 	s.serviceServers[svc.Name] = serviceServer
 
 	// Start the service server before listening
-	startupTimeout := constants.DefaultStartupTimeout
+	startupTimeout := config.DefaultStartupTimeout
 	if svc.StartupTimeout != nil {
 		startupTimeout = *svc.StartupTimeout
 	}
@@ -230,9 +235,9 @@ func (s *Server) createServiceListener(serviceServer tsnetpkg.TSNetServer, svc c
 	listenAddr := s.determineListenAddr(svc, tlsMode)
 
 	switch tlsMode {
-	case constants.TLSModeAuto:
+	case config.TLSModeAuto:
 		return s.createTLSListener(serviceServer, svc.Name, listenAddr, listenStart)
-	case constants.TLSModeOff:
+	case config.TLSModeOff:
 		return s.createPlainListener(serviceServer, svc.Name, listenAddr, listenStart)
 	default:
 		return nil, tserrors.NewValidationError(fmt.Sprintf("invalid TLS mode: %q", tlsMode))
@@ -281,7 +286,7 @@ func (s *Server) createTLSListener(serviceServer tsnetpkg.TSNetServer, serviceNa
 
 	// Prime the TLS certificate asynchronously
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), constants.CertificatePrimingTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), certificatePrimingTimeout)
 		defer cancel()
 		start := time.Now()
 		if err := s.primeCertificate(ctx, serviceServer, serviceName); err != nil {
@@ -323,7 +328,7 @@ func (s *Server) determineListenAddr(svc config.Service, tlsMode string) string 
 	}
 
 	// Default ports based on TLS mode
-	if tlsMode == constants.TLSModeOff {
+	if tlsMode == config.TLSModeOff {
 		return ":80"
 	}
 	return ":443"
@@ -348,7 +353,7 @@ func (s *Server) Close() error {
 	// Close all service servers with timeout
 	for serviceName, server := range servers {
 		slog.Debug("closing tsnet server", "service", serviceName)
-		if err := s.closeServerWithTimeout(server, serviceName, constants.TsnetServerCloseTimeout); err != nil {
+		if err := s.closeServerWithTimeout(server, serviceName, tsnetServerCloseTimeout); err != nil {
 			closeErrors = append(closeErrors, err)
 		}
 	}
@@ -400,7 +405,7 @@ func (s *Server) CloseService(serviceName string) error {
 	s.mu.Unlock()
 
 	// Close the tsnet server with timeout to avoid hangs
-	if err := s.closeServerWithTimeout(server, serviceName, constants.TsnetServerCloseTimeout); err != nil {
+	if err := s.closeServerWithTimeout(server, serviceName, tsnetServerCloseTimeout); err != nil {
 		return err
 	}
 
@@ -443,7 +448,7 @@ func (s *Server) primeCertificate(ctx context.Context, serviceServer tsnetpkg.TS
 	// Wait longer for the service to fully start and be reachable
 	// This is especially important in Docker environments
 	select {
-	case <-time.After(constants.TsnetServerStartTimeout):
+	case <-time.After(tsnetServerStartDelay):
 	case <-ctx.Done():
 		return fmt.Errorf("context cancelled during initial wait: %w", ctx.Err())
 	}

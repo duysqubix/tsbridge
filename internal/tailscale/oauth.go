@@ -14,10 +14,20 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/constants"
 	tserrors "github.com/jtdowney/tsbridge/internal/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
+)
+
+const (
+	authKeyExpirySeconds     = 5 * 60
+	oauthHTTPTimeout         = 30 * time.Second
+	retryInitialInterval     = 100 * time.Millisecond
+	retryMaxInterval         = 2 * time.Second
+	oauthRetryMaxElapsedTime = 100 * time.Second
+	retryMultiplier          = 2.0
+	retryRandomizationFactor = 0.1
+	retryMaxAttempts         = 2
 )
 
 // tailscaleTokenURL is the OAuth2 token endpoint for Tailscale
@@ -63,14 +73,14 @@ func generateAuthKeyWithOAuth(oauthConfig *oauth2.Config, apiBaseURL string, tag
 
 	// Configure exponential backoff with attempt limit
 	b := backoff.NewExponentialBackOff()
-	b.InitialInterval = constants.RetryInitialInterval
-	b.MaxInterval = constants.RetryMaxInterval
-	b.MaxElapsedTime = constants.OAuthRetryMaxElapsedTime
-	b.Multiplier = constants.RetryMultiplier
-	b.RandomizationFactor = constants.RetryRandomizationFactor
+	b.InitialInterval = retryInitialInterval
+	b.MaxInterval = retryMaxInterval
+	b.MaxElapsedTime = oauthRetryMaxElapsedTime
+	b.Multiplier = retryMultiplier
+	b.RandomizationFactor = retryRandomizationFactor
 
 	// Limit to 3 attempts using WithMaxRetries
-	backoffWithRetries := backoff.WithMaxRetries(b, constants.RetryMaxAttempts) // 2 retries = 3 total attempts
+	backoffWithRetries := backoff.WithMaxRetries(b, retryMaxAttempts)
 
 	var authKey string
 	attemptCount := 0
@@ -80,7 +90,7 @@ func generateAuthKeyWithOAuth(oauthConfig *oauth2.Config, apiBaseURL string, tag
 
 		slog.Debug("attempting OAuth auth key generation",
 			"attempt", attemptCount,
-			"max_attempts", constants.RetryMaxAttempts+1,
+			"max_attempts", retryMaxAttempts+1,
 		)
 
 		var err error
@@ -158,7 +168,7 @@ func isRetryableError(err error) bool {
 
 // generateAuthKeyWithOAuthDirect generates a Tailscale auth key using OAuth2 client credentials (no retry)
 func generateAuthKeyWithOAuthDirect(oauthConfig *oauth2.Config, apiBaseURL string, tags []string, ephemeral bool, preauthorized bool) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), constants.OAuthHTTPTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), oauthHTTPTimeout)
 	defer cancel()
 
 	start := time.Now()
@@ -184,7 +194,7 @@ func generateAuthKeyWithOAuthDirect(oauthConfig *oauth2.Config, apiBaseURL strin
 
 	// Create auth key request
 	req := authKeyRequest{
-		ExpirySeconds: constants.AuthKeyExpirySeconds,
+		ExpirySeconds: authKeyExpirySeconds,
 		Tags:          tags,
 	}
 
@@ -207,7 +217,7 @@ func generateAuthKeyWithOAuthDirect(oauthConfig *oauth2.Config, apiBaseURL strin
 		"ephemeral", ephemeral,
 		"preauthorized", preauthorized,
 		"tags", tags,
-		"expiry_seconds", constants.AuthKeyExpirySeconds,
+		"expiry_seconds", authKeyExpirySeconds,
 	)
 
 	// Create HTTP request

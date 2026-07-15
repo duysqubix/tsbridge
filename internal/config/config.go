@@ -18,8 +18,33 @@ import (
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 
-	"github.com/jtdowney/tsbridge/internal/constants"
 	"github.com/jtdowney/tsbridge/internal/errors"
+)
+
+const (
+	DefaultReadHeaderTimeout        = 30 * time.Second
+	defaultWriteTimeout             = 30 * time.Second
+	defaultIdleTimeout              = 120 * time.Second
+	DefaultShutdownTimeout          = 30 * time.Second
+	DefaultStartupTimeout           = 30 * time.Second
+	DefaultWhoisTimeout             = 5 * time.Second
+	defaultDialTimeout              = 30 * time.Second
+	defaultKeepAliveTimeout         = 30 * time.Second
+	defaultIdleConnTimeout          = 90 * time.Second
+	defaultTLSHandshakeTimeout      = 10 * time.Second
+	defaultExpectContinueTimeout    = time.Second
+	defaultMetricsReadHeaderTimeout = 5 * time.Second
+	defaultAccessLogEnabled         = true
+	defaultWhoisEnabled             = false
+	DefaultMaxRequestBodySize       = 50 * 1024 * 1024
+	immediateFlushInterval          = -time.Millisecond
+	bytesPerKB                      = 1024
+	bytesPerMB                      = 1024 * 1024
+	bytesPerGB                      = 1024 * 1024 * 1024
+	bytesPerTB                      = 1024 * 1024 * 1024 * 1024
+	TLSModeAuto                     = "auto"
+	TLSModeOff                      = "off"
+	defaultTLSMode                  = TLSModeAuto
 )
 
 // Config represents the complete tsbridge configuration
@@ -214,13 +239,13 @@ func ParseByteSizeString(s string) (int64, error) {
 	case "B", "BYTE", "BYTES":
 		multiplier = 1
 	case "K", "KB", "KIB":
-		multiplier = constants.BytesPerKB
+		multiplier = bytesPerKB
 	case "M", "MB", "MIB":
-		multiplier = constants.BytesPerMB
+		multiplier = bytesPerMB
 	case "G", "GB", "GIB":
-		multiplier = constants.BytesPerGB
+		multiplier = bytesPerGB
 	case "T", "TB", "TIB":
-		multiplier = constants.BytesPerTB
+		multiplier = bytesPerTB
 	default:
 		return 0, fmt.Errorf("unknown unit %q in byte size: %q", unit, s)
 	}
@@ -458,28 +483,28 @@ func inheritDefault[T any](dst **T, src *T) {
 
 // SetDefaults sets default values for any unspecified configuration
 func (c *Config) SetDefaults() {
-	setDefault(&c.Global.ReadHeaderTimeout, constants.DefaultReadHeaderTimeout)
-	setDefault(&c.Global.WriteTimeout, constants.DefaultWriteTimeout)
-	setDefault(&c.Global.IdleTimeout, constants.DefaultIdleTimeout)
-	setDefault(&c.Global.ShutdownTimeout, constants.DefaultShutdownTimeout)
-	setDefault(&c.Global.StartupTimeout, constants.DefaultStartupTimeout)
-	setDefault(&c.Global.AccessLog, constants.DefaultAccessLogEnabled)
-	setDefault(&c.Global.MaxRequestBodySize, int64(constants.DefaultMaxRequestBodySize))
-	setDefault(&c.Global.DialTimeout, constants.DefaultDialTimeout)
-	setDefault(&c.Global.KeepAliveTimeout, constants.DefaultKeepAliveTimeout)
-	setDefault(&c.Global.IdleConnTimeout, constants.DefaultIdleConnTimeout)
-	setDefault(&c.Global.TLSHandshakeTimeout, constants.DefaultTLSHandshakeTimeout)
-	setDefault(&c.Global.ExpectContinueTimeout, constants.DefaultExpectContinueTimeout)
-	setDefault(&c.Global.MetricsReadHeaderTimeout, constants.DefaultMetricsReadHeaderTimeout)
+	setDefault(&c.Global.ReadHeaderTimeout, DefaultReadHeaderTimeout)
+	setDefault(&c.Global.WriteTimeout, defaultWriteTimeout)
+	setDefault(&c.Global.IdleTimeout, defaultIdleTimeout)
+	setDefault(&c.Global.ShutdownTimeout, DefaultShutdownTimeout)
+	setDefault(&c.Global.StartupTimeout, DefaultStartupTimeout)
+	setDefault(&c.Global.AccessLog, defaultAccessLogEnabled)
+	setDefault(&c.Global.MaxRequestBodySize, int64(DefaultMaxRequestBodySize))
+	setDefault(&c.Global.DialTimeout, defaultDialTimeout)
+	setDefault(&c.Global.KeepAliveTimeout, defaultKeepAliveTimeout)
+	setDefault(&c.Global.IdleConnTimeout, defaultIdleConnTimeout)
+	setDefault(&c.Global.TLSHandshakeTimeout, defaultTLSHandshakeTimeout)
+	setDefault(&c.Global.ExpectContinueTimeout, defaultExpectContinueTimeout)
+	setDefault(&c.Global.MetricsReadHeaderTimeout, defaultMetricsReadHeaderTimeout)
 
 	setDefault(&c.Tailscale.OAuthPreauthorized, true)
 
 	for i := range c.Services {
 		svc := &c.Services[i]
-		setDefault(&svc.WhoisEnabled, constants.DefaultWhoisEnabled)
-		setDefault(&svc.WhoisTimeout, constants.DefaultWhoisTimeout)
+		setDefault(&svc.WhoisEnabled, defaultWhoisEnabled)
+		setDefault(&svc.WhoisTimeout, DefaultWhoisTimeout)
 		if svc.TLSMode == "" {
-			svc.TLSMode = constants.DefaultTLSMode
+			svc.TLSMode = defaultTLSMode
 		}
 	}
 }
@@ -596,13 +621,13 @@ func validateTimeout(name string, d *time.Duration, allowNegativeOne bool) error
 		return nil // nil is valid - will use default
 	}
 
-	if allowNegativeOne && *d == constants.ImmediateFlushInterval {
+	if allowNegativeOne && *d == immediateFlushInterval {
 		return nil // -1ms is valid for immediate flushing
 	}
 
 	if *d < 0 {
 		if allowNegativeOne {
-			return errors.NewValidationError(fmt.Sprintf("%s can only be %v for immediate flushing", name, constants.ImmediateFlushInterval))
+			return errors.NewValidationError(fmt.Sprintf("%s can only be %v for immediate flushing", name, immediateFlushInterval))
 		}
 		return errors.NewValidationError(fmt.Sprintf("%s cannot be negative", name))
 	}
@@ -858,10 +883,10 @@ func (c *Config) validateService(svc *Service) error {
 	// Validate TLS mode (only if set)
 	if svc.TLSMode != "" {
 		switch svc.TLSMode {
-		case constants.TLSModeAuto, constants.TLSModeOff:
+		case TLSModeAuto, TLSModeOff:
 			// Valid values
 		default:
-			return errors.NewValidationError(fmt.Sprintf("invalid tls_mode %q: must be '%s' or '%s'", svc.TLSMode, constants.TLSModeAuto, constants.TLSModeOff))
+			return errors.NewValidationError(fmt.Sprintf("invalid tls_mode %q: must be '%s' or '%s'", svc.TLSMode, TLSModeAuto, TLSModeOff))
 		}
 	}
 

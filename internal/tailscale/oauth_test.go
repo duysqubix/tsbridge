@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/constants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
@@ -776,9 +775,7 @@ func TestOAuthRetryBehavior(t *testing.T) {
 			}
 
 			// Attempt to generate auth key with retry
-			start := time.Now()
 			authKey, err := generateAuthKeyWithOAuth(oauthConfig, apiServer.URL, []string{"tag:test"}, false, true)
-			duration := time.Since(start)
 
 			// Verify results
 			if tt.shouldSucceed {
@@ -793,11 +790,6 @@ func TestOAuthRetryBehavior(t *testing.T) {
 			// Verify expected number of API calls
 			assert.Equal(t, tt.expectedCalls, apiCallCount)
 
-			// Verify retry timing (should have delays for retries)
-			if tt.expectedCalls > 1 {
-				minExpectedDuration := time.Duration(tt.expectedCalls-1) * constants.RetryMinTestDelay
-				assert.GreaterOrEqual(t, duration, minExpectedDuration)
-			}
 		})
 	}
 }

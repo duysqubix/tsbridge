@@ -16,8 +16,14 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/constants"
 	"github.com/jtdowney/tsbridge/internal/errors"
+)
+
+const (
+	DefaultPollInterval = time.Minute
+	pingTimeout         = 5 * time.Second
+	maxReconnectBackoff = 5 * time.Minute
+	eventDebounceDelay  = 500 * time.Millisecond
 )
 
 // DockerClient defines the methods required from a Docker client to be used by the provider
@@ -138,7 +144,7 @@ func NewProvider(opts Options) (*Provider, error) {
 	}
 
 	// Verify Docker connection
-	ctx, cancel := context.WithTimeout(context.Background(), constants.DockerPingTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), pingTimeout)
 	defer cancel()
 
 	pingInfo, err := dockerClient.Ping(ctx)
@@ -293,7 +299,6 @@ func createEventOptions() events.ListOptions {
 // watchLoop runs the main event watching loop with reconnection
 func (p *Provider) watchLoop(ctx context.Context, configCh chan<- *config.Config, eventOptions events.ListOptions) {
 	backoff := time.Second
-	const maxBackoff = constants.DockerMaxReconnectBackoff
 
 	for {
 		select {
@@ -320,8 +325,8 @@ func (p *Provider) watchLoop(ctx context.Context, configCh chan<- *config.Config
 			case <-time.After(backoff):
 				// Increase backoff for next time, up to the max
 				backoff *= 2
-				if backoff > maxBackoff {
-					backoff = maxBackoff
+				if backoff > maxReconnectBackoff {
+					backoff = maxReconnectBackoff
 				}
 			}
 		}
@@ -499,7 +504,7 @@ func (p *Provider) debouncedReload(ctx context.Context, configCh chan<- *config.
 	}
 
 	// Set new timer that calls immediateReload
-	p.debounceTimer = time.AfterFunc(constants.DockerEventDebounceDelay, func() {
+	p.debounceTimer = time.AfterFunc(eventDebounceDelay, func() {
 		p.immediateReload(ctx, configCh)
 	})
 }

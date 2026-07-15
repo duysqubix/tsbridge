@@ -14,7 +14,6 @@ import (
 
 	"github.com/jtdowney/tsbridge/internal/app"
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/constants"
 	"github.com/jtdowney/tsbridge/internal/docker"
 	tserrors "github.com/jtdowney/tsbridge/internal/errors"
 )
@@ -43,7 +42,7 @@ func parseCLIArgs(args []string) (*cliArgs, error) {
 	fs.StringVar(&result.provider, "provider", "file", "Configuration provider (file or docker)")
 	fs.StringVar(&result.dockerEndpoint, "docker-socket", "", "Docker socket endpoint (falls back to DOCKER_HOST env var, then unix:///var/run/docker.sock)")
 	fs.StringVar(&result.labelPrefix, "docker-label-prefix", "tsbridge", "Docker label prefix for configuration")
-	fs.DurationVar(&result.dockerPollInterval, "docker-poll-interval", constants.DockerPollInterval, "Docker config poll interval (0 to disable)")
+	fs.DurationVar(&result.dockerPollInterval, "docker-poll-interval", docker.DefaultPollInterval, "Docker config poll interval (0 to disable)")
 	fs.BoolVar(&result.verbose, "verbose", false, "Enable debug logging")
 	fs.BoolVar(&result.help, "help", false, "Show usage information")
 	fs.BoolVar(&result.help, "h", false, "Show usage information")
@@ -165,7 +164,7 @@ type Application interface {
 }
 
 func runApplication(application Application, sigCh <-chan os.Signal) error {
-	appErrCh := make(chan error, constants.DefaultChannelBufferSize)
+	appErrCh := make(chan error, 1)
 
 	go func() {
 		if err := application.Start(context.Background()); err != nil {
@@ -180,7 +179,7 @@ func runApplication(application Application, sigCh <-chan os.Signal) error {
 		return err
 	}
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), constants.DefaultShutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), config.DefaultShutdownTimeout)
 	defer cancel()
 
 	if err := application.Shutdown(shutdownCtx); err != nil {
@@ -246,7 +245,7 @@ func main() {
 	}
 
 	// Setup signal handling for graceful shutdown
-	sigCh := make(chan os.Signal, constants.DefaultChannelBufferSize)
+	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
 	if err := run(args, sigCh); err != nil {
