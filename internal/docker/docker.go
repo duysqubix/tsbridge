@@ -215,6 +215,18 @@ func (p *Provider) Load(ctx context.Context) (*config.Config, error) {
 			slog.Warn("failed to parse service configuration",
 				"container", containerName,
 				"error", err)
+			serviceName := c.Labels[fmt.Sprintf("%s.service.name", p.labelPrefix)]
+			if serviceName == "" && len(c.Names) > 0 {
+				serviceName = strings.TrimPrefix(c.Names[0], "/")
+			}
+			if p.lastConfig != nil {
+				for _, previous := range p.lastConfig.Services {
+					if previous.Name == serviceName {
+						cfg.Services = append(cfg.Services, previous)
+						break
+					}
+				}
+			}
 			continue
 		}
 		cfg.Services = append(cfg.Services, *svc)

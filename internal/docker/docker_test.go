@@ -1336,6 +1336,34 @@ func TestProvider_Load(t *testing.T) {
 		assert.Len(t, cfg.Services, 1)
 		assert.Equal(t, "good", cfg.Services[0].Name)
 	})
+	t.Run("malformed optional label retains last valid service", func(t *testing.T) {
+		mockClient := newMockDockerClient()
+
+		tsbridgeContainer := createTsbridgeContainer("tsbridge123")
+		service := createServiceContainer("svc1", "api", "localhost:8080")
+		service.Labels["tsbridge.service.whois_timeout"] = "5s"
+		mockClient.containers = []container.Summary{tsbridgeContainer, service}
+
+		provider := &Provider{
+			client:      mockClient,
+			labelPrefix: "tsbridge",
+		}
+
+		cfg, err := provider.Load(context.Background())
+		require.NoError(t, err)
+		require.Len(t, cfg.Services, 1)
+		require.NotNil(t, cfg.Services[0].WhoisTimeout)
+		assert.Equal(t, 5*time.Second, *cfg.Services[0].WhoisTimeout)
+
+		service.Labels["tsbridge.service.whois_timeout"] = "10sec"
+		mockClient.containers = []container.Summary{tsbridgeContainer, service}
+
+		cfg, err = provider.Load(context.Background())
+		require.NoError(t, err)
+		require.Len(t, cfg.Services, 1)
+		require.NotNil(t, cfg.Services[0].WhoisTimeout)
+		assert.Equal(t, 5*time.Second, *cfg.Services[0].WhoisTimeout)
+	})
 }
 
 func TestProvider_Watch_Enhanced(t *testing.T) {
