@@ -525,10 +525,7 @@ func (c *Config) Normalize() {
 		inheritDefault(&svc.FlushInterval, c.Global.FlushInterval)
 		inheritDefault(&svc.MaxRequestBodySize, c.Global.MaxRequestBodySize)
 
-		// Copy access log setting if not set
-		if svc.AccessLog == nil {
-			svc.AccessLog = c.Global.AccessLog
-		}
+		inheritDefault(&svc.AccessLog, c.Global.AccessLog)
 
 		// Copy tags if not set
 		if svc.Tags == nil && c.Tailscale.DefaultTags != nil {

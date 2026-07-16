@@ -1992,6 +1992,19 @@ func TestNormalize(t *testing.T) {
 		})
 	}
 }
+
+func TestNormalizeCopiesInheritedAccessLog(t *testing.T) {
+	accessLog := true
+	cfg := Config{
+		Global:   Global{AccessLog: &accessLog},
+		Services: []Service{{}},
+	}
+
+	cfg.Normalize()
+	*cfg.Global.AccessLog = false
+
+	assert.True(t, *cfg.Services[0].AccessLog)
+}
 func TestTailscaleString(t *testing.T) {
 	tests := []struct {
 		name        string
