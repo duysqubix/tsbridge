@@ -54,13 +54,8 @@ rate(tsbridge_request_duration_seconds_sum[5m]) / rate(tsbridge_request_duration
 #### tsbridge_errors_total
 
 - Type: Counter
-- Labels: `service`, `type` (error type)
-- Description: Total number of errors by type
-- Error types:
-  - `backend_connection` - Failed to connect to backend
-  - `backend_error` - Backend returned an error
-  - `whois_timeout` - Whois lookup timed out
-  - `panic` - Request handler panic
+- Labels: `service`, `type`
+- The only emitted `type` value is `panic`, recorded when a request handler panics.
 
 ```promql
 # Error rate by type
@@ -130,14 +125,13 @@ rate(tsbridge_service_operations_total{status="failure"}[5m])
 #### tsbridge_config_reloads_total
 
 - Type: Counter
-- Labels: `status` (success/failure)
-- Description: Configuration reload attempts
-- Note: For future dynamic reload support
+- Labels: `status` (`success` or `failure`)
+- Counts provider-driven configuration reload attempts. The Docker provider emits this metric when container events or polling produce a new configuration. The file provider does not watch TOML files.
 
 #### tsbridge_config_reload_duration_seconds
 
 - Type: Histogram
-- Description: Time taken to reload configuration
+- Measures provider-driven configuration reload time.
 
 ## Example Queries
 
