@@ -64,7 +64,7 @@ Here are a few common settings:
 
 ### Security
 
-> **Security Note**: tsbridge is intended for homelabs and development environments. It hasn't been hardened or battle-tested for production workloads. See [THREAT_MODEL.md](THREAT_MODEL.md) for details.
+> Security Note: tsbridge is intended for homelabs and development environments. It hasn't been hardened or battle-tested for production workloads. See [THREAT_MODEL.md](THREAT_MODEL.md) for details.
 
 For enhanced security using tag ownership, see [Tag Ownership and OAuth Security](docs/configuration-reference.md#tag-ownership-and-oauth-security).
 
@@ -114,7 +114,7 @@ volumes:
 
 See [docs/docker-labels.md](docs/docker-labels.md) for the full label reference.
 
-> **Note**: The `default_tags` must match or be owned by your OAuth client's tag. Individual services can override this with their own `tags` label. See [Tag Ownership and OAuth Security](docs/configuration-reference.md#tag-ownership-and-oauth-security) for setup details.
+> Note: The `default_tags` must match or be owned by your OAuth client's tag. Individual services can override this with their own `tags` label. See [Tag Ownership and OAuth Security](docs/configuration-reference.md#tag-ownership-and-oauth-security) for setup details.
 
 ## Headscale
 

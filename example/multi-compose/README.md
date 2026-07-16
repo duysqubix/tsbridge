@@ -13,8 +13,8 @@ The key is that both files reference the same Docker network (`tsbridge-shared-n
 
 ## Network Strategy
 
-1. **tsbridge-compose.yml** creates the network (`tsbridge-shared-network`)
-2. **services-compose.yml** uses the network as external
+1. tsbridge-compose.yml creates the network (`tsbridge-shared-network`)
+2. services-compose.yml uses the network as external
 3. All containers can communicate because they're on the same network
 
 ## Prerequisites
@@ -89,26 +89,26 @@ docker compose -f services-compose.yml down -v
 
 ## Why This Works
 
-1. **Network Sharing**: Both compose files reference the same Docker network name
-2. **Service Discovery**: tsbridge watches Docker events across all networks it's connected to
-3. **Container Resolution**: Service labels use `port` which resolves to the container name + that port
-4. **Automatic Proxy**: When containers start/stop, tsbridge automatically adds/removes proxies
+1. Network Sharing: Both compose files reference the same Docker network name
+2. Service Discovery: tsbridge watches Docker events across all networks it's connected to
+3. Container Resolution: Service labels use `port` which resolves to the container name + that port
+4. Automatic Proxy: When containers start/stop, tsbridge automatically adds/removes proxies
 
 ## Troubleshooting
 
-**Services not appearing in tsbridge?**
+Services not appearing in tsbridge?
 
 - Ensure containers have `tsbridge.enabled=true` label
 - Check both containers are on the same network: `docker network inspect tsbridge-shared-network`
 - Look at tsbridge logs: `docker compose -f tsbridge-compose.yml logs tsbridge`
 
-**Network connection refused?**
+Network connection refused?
 
 - Verify service is listening on the specified port
 - Test connectivity: `docker exec tsbridge-container ping service-container`
 - Check service containers are running: `docker compose -f services-compose.yml ps`
 
-**Network not found errors?**
+Network not found errors?
 
 - Start tsbridge first (it creates the network) OR
 - Create network manually: `docker network create tsbridge-shared-network`

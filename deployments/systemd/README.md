@@ -83,11 +83,11 @@ sudo systemctl restart tsbridge
 
 ### Common Issues
 
-**"netlinkrib: address family not supported"**
+"netlinkrib: address family not supported"
 - Already fixed in service file with `AF_NETLINK`
 - If you see it: `sudo systemctl daemon-reload && sudo systemctl restart tsbridge`
 
-**Service won't start?**
+Service won't start?
 1. Check binary is executable
 2. Validate config file
 3. Verify OAuth credentials are set

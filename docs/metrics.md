@@ -19,10 +19,10 @@ Access metrics at `http://localhost:9090/metrics`
 
 #### tsbridge_requests_total
 
-- **Type**: Counter
-- **Labels**: `service`, `status` (HTTP status code)
-- **Description**: Total number of HTTP requests processed
-- **Use case**: Request rate, success/error ratios
+- Type: Counter
+- Labels: `service`, `status` (HTTP status code)
+- Description: Total number of HTTP requests processed
+- Use case: Request rate, success/error ratios
 
 ```promql
 # Request rate per service
@@ -34,10 +34,10 @@ rate(tsbridge_requests_total{status!~"2.."}[5m])
 
 #### tsbridge_request_duration_seconds
 
-- **Type**: Histogram
-- **Labels**: `service`
-- **Description**: Request processing time in seconds
-- **Use case**: Latency monitoring, SLO tracking
+- Type: Histogram
+- Labels: `service`
+- Description: Request processing time in seconds
+- Use case: Latency monitoring, SLO tracking
 
 ```promql
 # 95th percentile latency per service
@@ -53,10 +53,10 @@ rate(tsbridge_request_duration_seconds_sum[5m]) / rate(tsbridge_request_duration
 
 #### tsbridge_errors_total
 
-- **Type**: Counter
-- **Labels**: `service`, `type` (error type)
-- **Description**: Total number of errors by type
-- **Error types**:
+- Type: Counter
+- Labels: `service`, `type` (error type)
+- Description: Total number of errors by type
+- Error types:
   - `backend_connection` - Failed to connect to backend
   - `backend_error` - Backend returned an error
   - `whois_timeout` - Whois lookup timed out
@@ -71,26 +71,26 @@ rate(tsbridge_errors_total[5m])
 
 #### tsbridge_connections_active
 
-- **Type**: Gauge
-- **Labels**: `service`
-- **Description**: Current connections managed by the HTTP server. Excludes hijacked connections, including WebSockets after upgrade.
-- **Use case**: HTTP server connection load monitoring
+- Type: Gauge
+- Labels: `service`
+- Description: Current connections managed by the HTTP server. Excludes hijacked connections, including WebSockets after upgrade.
+- Use case: HTTP server connection load monitoring
 
 #### tsbridge_connection_pool_active
 
-- **Type**: Gauge
-- **Labels**: `service`
-- **Description**: Active requests to backend (in-flight requests)
-- **Use case**: Backend load monitoring
+- Type: Gauge
+- Labels: `service`
+- Description: Active requests to backend (in-flight requests)
+- Use case: Backend load monitoring
 
 ### Whois Metrics
 
 #### tsbridge_whois_duration_seconds
 
-- **Type**: Histogram
-- **Labels**: `service`
-- **Description**: Time taken for Tailscale whois lookups
-- **Use case**: Monitor whois performance
+- Type: Histogram
+- Labels: `service`
+- Description: Time taken for Tailscale whois lookups
+- Use case: Monitor whois performance
 
 ```promql
 # Whois lookup latency
@@ -101,17 +101,17 @@ histogram_quantile(0.99, rate(tsbridge_whois_duration_seconds_bucket[5m]))
 
 #### tsbridge_services_active
 
-- **Type**: Gauge
-- **Description**: Number of currently active services
-- **Use case**: Track service count
+- Type: Gauge
+- Description: Number of currently active services
+- Use case: Track service count
 
 #### tsbridge_service_operations_total
 
-- **Type**: Counter
-- **Labels**: `operation`, `status`
-- **Operations**: `add`, `remove`, `update`
-- **Status**: `success`, `failure`
-- **Description**: Service lifecycle operations
+- Type: Counter
+- Labels: `operation`, `status`
+- Operations: `add`, `remove`, `update`
+- Status: `success`, `failure`
+- Description: Service lifecycle operations
 
 ```promql
 # Service operation failure rate
@@ -120,24 +120,24 @@ rate(tsbridge_service_operations_total{status="failure"}[5m])
 
 #### tsbridge_service_operation_duration_seconds
 
-- **Type**: Histogram
-- **Labels**: `operation`
-- **Description**: Time taken for service operations
-- **Use case**: Monitor startup/shutdown performance
+- Type: Histogram
+- Labels: `operation`
+- Description: Time taken for service operations
+- Use case: Monitor startup/shutdown performance
 
 ### Configuration
 
 #### tsbridge_config_reloads_total
 
-- **Type**: Counter
-- **Labels**: `status` (success/failure)
-- **Description**: Configuration reload attempts
-- **Note**: For future dynamic reload support
+- Type: Counter
+- Labels: `status` (success/failure)
+- Description: Configuration reload attempts
+- Note: For future dynamic reload support
 
 #### tsbridge_config_reload_duration_seconds
 
-- **Type**: Histogram
-- **Description**: Time taken to reload configuration
+- Type: Histogram
+- Description: Time taken to reload configuration
 
 ## Example Queries
 

@@ -36,7 +36,7 @@ volumes:
 
 Your app is now at `https://myapp.<tailnet>.ts.net`
 
-> **Note**: The `default_tags` must match or be owned by your OAuth client's tag. Individual services can override this with their own `tags` label. See [Tag Ownership and OAuth Security](configuration-reference.md#tag-ownership-and-oauth-security) for setup details.
+> Note: The `default_tags` must match or be owned by your OAuth client's tag. Individual services can override this with their own `tags` label. See [Tag Ownership and OAuth Security](configuration-reference.md#tag-ownership-and-oauth-security) for setup details.
 
 ## How It Works
 
@@ -56,7 +56,7 @@ When using the Docker provider, these flags are available:
 | `--docker-label-prefix` | `tsbridge` | Prefix for container labels |
 | `--docker-poll-interval` | `1m` | Periodic config poll interval (0 to disable) |
 
-**Example:**
+Example:
 
 ```bash
 tsbridge --provider docker --docker-poll-interval 30s
@@ -66,9 +66,9 @@ tsbridge --provider docker --docker-poll-interval 30s
 
 By default, tsbridge connects to the Docker daemon at `unix:///var/run/docker.sock`. You can configure an alternative endpoint using:
 
-1. **`-docker-socket` flag** (highest priority)
-2. **`DOCKER_HOST` environment variable** (standard Docker convention)
-3. **Default socket** (`unix:///var/run/docker.sock`)
+1. `-docker-socket` flag (highest priority)
+2. `DOCKER_HOST` environment variable (standard Docker convention)
+3. Default socket (`unix:///var/run/docker.sock`)
 
 This is useful for:
 - Remote Docker daemons (`tcp://docker-host:2375`)
@@ -76,7 +76,7 @@ This is useful for:
 - Rootless Docker (`unix:///run/user/1000/docker.sock`)
 - Custom socket paths
 
-**Example with DOCKER_HOST:**
+Example with DOCKER_HOST:
 
 ```yaml
 services:
@@ -90,7 +90,7 @@ services:
     # ...
 ```
 
-**Example with explicit flag:**
+Example with explicit flag:
 
 ```bash
 tsbridge -provider docker -docker-socket tcp://docker-host:2375
@@ -137,7 +137,7 @@ labels:
 
 ## Backend Address Tips
 
-**Use port, not localhost:**
+Use port, not localhost:
 
 ```yaml
 # Good - uses container name
@@ -147,7 +147,7 @@ labels:
 - "tsbridge.service.backend_addr=localhost:8080"
 ```
 
-**Why?** In Docker, each container has its own network namespace. `localhost` inside tsbridge doesn't reach your service container.
+Why? In Docker, each container has its own network namespace. `localhost` inside tsbridge doesn't reach your service container.
 
 ## Advanced Features
 
@@ -206,7 +206,7 @@ labels:
   - "tsbridge.service.insecure_skip_verify=true"
 ```
 
-> **⚠️ Security Warning**: `insecure_skip_verify=true` disables TLS certificate validation. Only use this for trusted internal services with self-signed certificates, as it makes connections vulnerable to attacks.
+> Security warning: `insecure_skip_verify=true` disables TLS certificate validation. Only use this for trusted internal services with self-signed certificates, as it makes connections vulnerable to attacks.
 
 ## Complete Example
 
@@ -305,13 +305,13 @@ services:
 
 For services in separate compose files, use external networks:
 
-**1. Create the network first:**
+1. Create the network first:
 
 ```bash
 docker network create tsbridge-network
 ```
 
-**2. tsbridge-compose.yml:**
+2. tsbridge-compose.yml:
 
 ```yaml
 services:
@@ -334,7 +334,7 @@ networks:
     external: true
 ```
 
-**3. services-compose.yml:**
+3. services-compose.yml:
 
 ```yaml
 services:
@@ -361,7 +361,7 @@ networks:
     external: true
 ```
 
-**4. Start them:**
+4. Start them:
 
 ```bash
 # Start tsbridge
@@ -375,7 +375,7 @@ docker compose -f services-compose.yml up -d
 
 You can also define the network in one compose file and reference it as external in others:
 
-**tsbridge-compose.yml (defines network):**
+tsbridge-compose.yml (defines network):
 
 ```yaml
 services:
@@ -389,7 +389,7 @@ networks:
     name: tsbridge-shared
 ```
 
-**services-compose.yml (uses external network):**
+services-compose.yml (uses external network):
 
 ```yaml
 services:
@@ -406,29 +406,29 @@ networks:
 
 ### Network Troubleshooting
 
-**Why does networking matter?**
+Why does networking matter?
 
 - tsbridge acts as a reverse proxy
 - It needs to reach your service containers over the network
-- `localhost` inside tsbridge container ≠ service containers
+- `localhost` inside the tsbridge container does not refer to service containers
 - Docker networks enable container-to-container communication
 
-**Common networking issues:**
+Common networking issues:
 
-**Service not appearing?**
+Service not appearing?
 
 - Check `tsbridge.enabled=true` is set
 - Verify containers are on same network - use `docker network ls` and `docker inspect <container>`
 - Look at tsbridge logs with `--verbose`
 
-**Connection refused?**
+Connection refused?
 
 - Don't use `localhost` - use `port` label instead
 - Make sure service is listening on the port
 - Check container is actually running
 - Verify network connectivity: `docker exec tsbridge-container ping service-container`
 
-**Cross-compose networking not working?**
+Cross-compose networking not working?
 
 - Ensure both compose files reference the same network name
 - Check network exists: `docker network ls`
@@ -437,12 +437,12 @@ networks:
 
 ## Troubleshooting
 
-**Label changes ignored?**
+Label changes ignored?
 
 - Labels are only read when container starts
 - Restart container to apply new labels
 
-**Cannot connect between compose files?**
+Cannot connect between compose files?
 
 - Ensure both files use the same network name
 - Network must be marked as `external: true` in dependent compose files

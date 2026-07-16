@@ -13,7 +13,7 @@ I will try to acknowledge receipt within 48 hours and aim to provide an initial 
 
 ## Security Considerations
 
-tsbridge is designed for use in relatively trusted environments. Please review our [THREAT_MODEL.md](THREAT_MODEL.md) for a comprehensive analysis of:
+tsbridge is designed for use in relatively trusted environments. Review [THREAT_MODEL.md](THREAT_MODEL.md) for:
 
 - Intended use cases and environments
 - Trust boundaries and security model
@@ -27,7 +27,7 @@ This project is primarily intended for:
 - Development environments
 - Small team internal networks
 
-It is **not** designed for security-critical production environments or public-facing services.
+It is not designed for security-critical production environments or public-facing services.
 
 ## Security Updates
 

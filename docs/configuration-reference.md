@@ -21,12 +21,12 @@ Complete reference for all tsbridge configuration options.
 
 You must provide either OAuth credentials OR an auth key.
 
-> **Resolution Order**: tsbridge resolves secret values in the following priority order:
+> Resolution Order: tsbridge resolves secret values in the following priority order:
 >
-> 1. **Direct value** (inline in config file)
-> 2. **File** (from `_file` suffix)
-> 3. **Environment variable** (from `_env` suffix)
-> 4. **Default environment variable** (e.g., `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_CLIENT_SECRET`, `TS_AUTHKEY`)
+> 1. Direct value (inline in config file)
+> 2. File (from `_file` suffix)
+> 3. Environment variable (from `_env` suffix)
+> 4. Default environment variable (e.g., `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_CLIENT_SECRET`, `TS_AUTHKEY`)
 >
 > If any configured source (file or env var) is specified but cannot be accessed or is empty, tsbridge will return an error instead of falling back to the next priority level.
 
@@ -103,14 +103,14 @@ In this configuration:
 
 #### Creating the OAuth Client
 
-1. Go to **Settings** → **OAuth clients** in Tailscale admin console
-2. Click **Generate OAuth client...**
+1. Open Settings, then OAuth clients, in the Tailscale admin console
+2. Click Generate OAuth client...
 3. Configure:
-   - **Scopes**: Check both **Read** and **Write** under **Auth Keys**
-   - **Tags**: Select `tag:tsbridge` (the parent tag, NOT the service tags)
+   - Scopes: Check both Read and Write under Auth Keys
+   - Tags: Select `tag:tsbridge` (the parent tag, NOT the service tags)
 4. Save the credentials
 
-**Important**: Select only the parent tag for the OAuth client. This grants permission to create auth keys for all tags it owns.
+Important: Select only the parent tag for the OAuth client. This grants permission to create auth keys for all tags it owns.
 
 #### Using Tag Hierarchies in tsbridge
 
@@ -230,7 +230,7 @@ backend_addr = "https://internal-service.lan:8443"
 insecure_skip_verify = true    # Skip TLS certificate verification
 ```
 
-> **⚠️ Security Warning**: Setting `insecure_skip_verify = true` disables TLS certificate validation, making connections vulnerable to man-in-the-middle attacks. Only use this for trusted internal services with self-signed certificates. A warning will be logged when this option is enabled.
+> Security warning: Setting `insecure_skip_verify = true` disables TLS certificate validation, making connections vulnerable to man-in-the-middle attacks. Only use this for trusted internal services with self-signed certificates. A warning will be logged when this option is enabled.
 
 ### Network Options
 
@@ -318,13 +318,13 @@ Default environment variables checked if no config specified:
 
 tsbridge resolves secrets using different modes based on what you specify:
 
-**Direct mode** (when you set a value directly):
+Direct mode (when you set a value directly):
 
 ```toml
 oauth_client_id = "k12...89"  # This value is used
 ```
 
-**Environment variable mode** (when you use `_env`):
+Environment variable mode (when you use `_env`):
 
 ```toml
 oauth_client_id_env = "MY_CUSTOM_VAR"  # Reads from MY_CUSTOM_VAR
@@ -332,7 +332,7 @@ oauth_client_id_env = "MY_CUSTOM_VAR"  # Reads from MY_CUSTOM_VAR
 # Fallback to TS_OAUTH_CLIENT_ID is used only when no oauth_client_id/_env/_file is configured at all.
 ```
 
-**File mode** (when you use `_file`):
+File mode (when you use `_file`):
 
 ```toml
 oauth_client_id_file = "/path/to/file"  # Reads from file
@@ -340,9 +340,9 @@ oauth_client_id_file = "/path/to/file"  # Reads from file
 # Fallback to TS_OAUTH_CLIENT_ID is used only when no oauth_client_id/_env/_file is configured at all.
 ```
 
-**Important**: If you specify `_env` or `_file`, any direct value is ignored. You cannot mix modes.
+Important: If you specify `_env` or `_file`, any direct value is ignored. You cannot mix modes.
 
-**Override**: Environment variables prefixed with `TSBRIDGE_` can override any configuration:
+Override: Environment variables prefixed with `TSBRIDGE_` can override any configuration:
 
 - `TSBRIDGE_TAILSCALE_OAUTH_CLIENT_ID` overrides `tailscale.oauth_client_id`
 - `TSBRIDGE_GLOBAL_METRICS_ADDR` overrides `global.metrics_addr`

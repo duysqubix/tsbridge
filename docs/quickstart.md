@@ -5,11 +5,11 @@ Get tsbridge running in 5 minutes.
 ## 1. Get OAuth Credentials
 
 1. Go to <https://login.tailscale.com/admin/settings/oauth>
-2. Click **Generate OAuth client...**
+2. Click Generate OAuth client...
 3. Name it something like `tsbridge`
-4. Under **Scopes** → **Auth Keys**, check both **Read** and **Write**
-5. **Tags**: Select a tag (e.g., `tag:server`) - this tag will be used by your services
-6. Click **Generate client**
+4. Under Scopes, open Auth Keys and check both Read and Write
+5. Tags: Select a tag (e.g., `tag:server`) - this tag will be used by your services
+6. Click Generate client
 7. Save the Client ID and Secret
 
 ## 2. Create Config File
@@ -133,7 +133,7 @@ volumes:
   tsbridge-state:
 ```
 
-> **Network Requirements**: tsbridge and service containers must be on the same Docker network. They don't need to be in the same compose file, but network connectivity is required. See [Docker Labels - Docker Networking](docker-labels.md#docker-networking) for multi-compose setups.
+> Network Requirements: tsbridge and service containers must be on the same Docker network. They don't need to be in the same compose file, but network connectivity is required. See [Docker Labels - Docker Networking](docker-labels.md#docker-networking) for multi-compose setups.
 
 ## Troubleshooting
 
@@ -145,10 +145,10 @@ tsbridge -config tsbridge.toml -validate
 
 ### Common Issues
 
-- **"services must have at least one tag"**: Add `default_tags` to `[tailscale]` section
-- **"OAuth client ID not set"**: Check your environment variables
-- **Connection timeouts**: For streaming, set `write_timeout = "0s"`
-- **Tag authorization errors**: Ensure tags match or are owned by your OAuth client's tag. See [Tag Ownership and OAuth Security](configuration-reference.md#tag-ownership-and-oauth-security)
+- "services must have at least one tag": Add `default_tags` to `[tailscale]` section
+- "OAuth client ID not set": Check your environment variables
+- Connection timeouts: For streaming, set `write_timeout = "0s"`
+- Tag authorization errors: Ensure tags match or are owned by your OAuth client's tag. See [Tag Ownership and OAuth Security](configuration-reference.md#tag-ownership-and-oauth-security)
 
 ## Next Steps
 

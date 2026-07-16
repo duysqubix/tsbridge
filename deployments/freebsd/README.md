@@ -1,6 +1,6 @@
 # FreeBSD Deployment Guide for tsbridge
 
-This guide covers deploying tsbridge on FreeBSD systems using the rc.d init system.
+Run tsbridge on FreeBSD with the rc.d init system.
 
 ## Prerequisites
 
@@ -269,16 +269,16 @@ tsbridge_limits="-n 100000 -u 512"  # Max files: 100k, Max processes: 512
 
 ### Common Issues
 
-1. **OAuth Authentication Fails**
+1. OAuth Authentication Fails
    - Verify OAuth credentials are correct
    - Check file permissions on credential files
    - Ensure tsbridge user can read the files
 
-2. **Port Already in Use**
+2. Port Already in Use
    - Check for conflicting services: `sockstat -4 -6 | grep :PORT`
    - Adjust service configuration to use different ports
 
-3. **File Descriptor Limits**
+3. File Descriptor Limits
    - Increase limits in rc.conf: `tsbridge_limits="-n 100000"`
    - Check system-wide limits: `sysctl kern.maxfiles`
 
