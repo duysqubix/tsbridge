@@ -32,6 +32,7 @@ go install github.com/jtdowney/tsbridge/cmd/tsbridge@latest
 [tailscale]
 oauth_client_id_env = "TS_OAUTH_CLIENT_ID"
 oauth_client_secret_env = "TS_OAUTH_CLIENT_SECRET"
+default_tags = ["tag:server"]  # OAuth client must own this tag
 
 [[services]]
 name = "api"
