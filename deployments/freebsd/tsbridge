@@ -47,8 +47,6 @@ start_precmd="${name}_precmd"
 start_cmd="${name}_start"
 stop_cmd="${name}_stop"
 status_cmd="${name}_status"
-reload_cmd="${name}_reload"
-extra_commands="reload"
 
 tsbridge_precmd()
 {
@@ -135,21 +133,6 @@ tsbridge_status()
     fi
 }
 
-tsbridge_reload()
-{
-    echo "Reloading ${name} configuration."
-    
-    if [ -f "${pidfile}" ]; then
-        pid=$(cat ${pidfile})
-        if kill -0 ${pid} 2>/dev/null; then
-            kill -HUP ${pid}
-        else
-            err 1 "${name} is not running"
-        fi
-    else
-        err 1 "${name} is not running"
-    fi
-}
 
 load_rc_config ${name}
 run_rc_command "$1"

@@ -152,9 +152,6 @@ service tsbridge stop
 # Check service status
 service tsbridge status
 
-# Reload configuration (if supported by tsbridge)
-service tsbridge reload
-
 # Enable service to start at boot
 sysrc tsbridge_enable="YES"
 
