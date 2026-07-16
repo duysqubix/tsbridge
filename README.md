@@ -52,6 +52,24 @@ tsbridge -config tsbridge.toml
 
 tsbridge will now be available on your tailnet. Thanks to MagicDNS, you can reach your services at `https://api.<tailnet>.ts.net` and `https://web.<tailnet>.ts.net`.
 
+## Command-line reference
+
+tsbridge accepts one or two hyphens before a flag. The examples use one hyphen to match the generated help.
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `-config <path>` | none | TOML configuration file; required with `-provider file` |
+| `-provider <name>` | `file` | Configuration provider: `file` or `docker` |
+| `-docker-socket <endpoint>` | `DOCKER_HOST`, then `unix:///var/run/docker.sock` | Docker daemon endpoint |
+| `-docker-label-prefix <prefix>` | `tsbridge` | Docker label prefix |
+| `-docker-poll-interval <duration>` | `1m` | Docker safety poll interval; `0` disables polling |
+| `-verbose` | disabled | Enable debug logging; a non-empty `TSBRIDGE_DEBUG` also enables it |
+| `-help`, `-h` | disabled | Print command usage |
+| `-version` | disabled | Print the tsbridge version |
+| `-validate` | disabled | Load and validate configuration, then exit |
+
+Docker flags affect only `-provider docker`. The Docker provider discovers configuration from labels and does not require `-config`.
+
 ## Configuration
 
 tsbridge is configured via `tsbridge.toml`. See [docs/quickstart.md](docs/quickstart.md) for getting started quickly, or [docs/configuration-reference.md](docs/configuration-reference.md) for all options.
