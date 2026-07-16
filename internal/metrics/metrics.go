@@ -64,7 +64,7 @@ func NewCollector() *Collector {
 		ConnectionCount: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "tsbridge_connections_active",
-				Help: "Number of active connections per service",
+				Help: "Number of connections managed by the HTTP server per service; excludes hijacked connections",
 			},
 			[]string{"service"},
 		),
@@ -156,8 +156,8 @@ func (c *Collector) RecordWhoisDuration(service string, duration time.Duration) 
 	c.WhoisDuration.WithLabelValues(service).Observe(duration.Seconds())
 }
 
-// ConnStateHook returns an http.Server.ConnState callback that tracks the
-// number of active connections for a service via the ConnectionCount gauge.
+// ConnStateHook returns an http.Server.ConnState callback that tracks
+// connections until they close or leave HTTP server control through hijacking.
 func (c *Collector) ConnStateHook(service string) func(net.Conn, http.ConnState) {
 	return func(_ net.Conn, state http.ConnState) {
 		switch state {

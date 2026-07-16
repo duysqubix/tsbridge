@@ -73,8 +73,8 @@ rate(tsbridge_errors_total[5m])
 
 - **Type**: Gauge
 - **Labels**: `service`
-- **Description**: Current number of active connections
-- **Use case**: Load monitoring, capacity planning
+- **Description**: Current connections managed by the HTTP server. Excludes hijacked connections, including WebSockets after upgrade.
+- **Use case**: HTTP server connection load monitoring
 
 #### tsbridge_connection_pool_active
 
