@@ -98,42 +98,84 @@ tsbridge -provider docker -docker-socket tcp://docker-host:2375
 
 ## Label Reference
 
-### On tsbridge Container
+### Labels on the tsbridge container
 
-```yaml
-labels:
-  # Required: OAuth setup
-  - "tsbridge.tailscale.oauth_client_id_env=TS_OAUTH_CLIENT_ID"
-  - "tsbridge.tailscale.oauth_client_secret_env=TS_OAUTH_CLIENT_SECRET"
-  - "tsbridge.tailscale.state_dir=/var/lib/tsbridge"
+Place Tailscale and global labels on the container running tsbridge. Comma-separated labels produce string lists.
 
-  # Optional: defaults
-  - "tsbridge.tailscale.default_tags=tag:server,tag:proxy"
-  - "tsbridge.tailscale.oauth_preauthorized=false" # Require manual device approval (default: true)
-  - "tsbridge.global.metrics_addr=:9090"
-  - "tsbridge.global.write_timeout=30s"
-  - "tsbridge.global.startup_timeout=60s"
-```
+#### Tailscale labels
 
-### On Service Containers
+| Label | Default | Purpose |
+|------|---------|---------|
+| `tsbridge.tailscale.oauth_client_id` | none | OAuth client ID |
+| `tsbridge.tailscale.oauth_client_id_env` | none | Environment variable containing the OAuth client ID |
+| `tsbridge.tailscale.oauth_client_id_file` | none | Absolute path containing the OAuth client ID |
+| `tsbridge.tailscale.oauth_client_secret` | none | OAuth client secret |
+| `tsbridge.tailscale.oauth_client_secret_env` | none | Environment variable containing the OAuth client secret |
+| `tsbridge.tailscale.oauth_client_secret_file` | none | Absolute path containing the OAuth client secret |
+| `tsbridge.tailscale.auth_key` | none | Tailscale auth key used instead of OAuth |
+| `tsbridge.tailscale.auth_key_env` | none | Environment variable containing the auth key |
+| `tsbridge.tailscale.auth_key_file` | none | Absolute path containing the auth key |
+| `tsbridge.tailscale.state_dir` | platform data directory | Base directory for per-service tsnet state |
+| `tsbridge.tailscale.state_dir_env` | none | Environment variable containing the state directory |
+| `tsbridge.tailscale.default_tags` | none | Comma-separated service tags |
+| `tsbridge.tailscale.control_url` | Tailscale | Alternate control server URL, such as Headscale |
+| `tsbridge.tailscale.oauth_preauthorized` | `true` | Preauthorize OAuth-generated auth keys |
 
-```yaml
-labels:
-  # Required
-  - "tsbridge.enabled=true"
+Provide either OAuth credentials or an auth key. OAuth services also require tags from `default_tags` or a service label.
 
-  # Service config (pick one)
-  - "tsbridge.service.port=8080" # Recommended
-  - "tsbridge.service.backend_addr=myservice:8080" # If you need specific host
+#### Global labels
 
-  # Optional
-  - "tsbridge.service.name=custom-name" # Default: container name
-  - "tsbridge.service.whois_enabled=true" # Add identity headers
-  - "tsbridge.service.tags=tag:api,tag:prod" # Override default tags
-  - "tsbridge.service.oauth_preauthorized=false" # Override global preauth setting (global default: true)
-  - "tsbridge.service.listen_addr=0.0.0.0:9090" # Custom address and port
-  - "tsbridge.service.insecure_skip_verify=true" # Skip TLS cert verification (HTTPS backends only)
-```
+| Label | Default | Purpose |
+|------|---------|---------|
+| `tsbridge.global.metrics_addr` | disabled | Prometheus listen address |
+| `tsbridge.global.read_header_timeout` | `30s` | Time allowed to read request headers |
+| `tsbridge.global.write_timeout` | `30s` | Time allowed to write a response |
+| `tsbridge.global.idle_timeout` | `120s` | HTTP keep-alive idle timeout |
+| `tsbridge.global.shutdown_timeout` | `30s` | Graceful shutdown timeout |
+| `tsbridge.global.startup_timeout` | `30s` | tsnet startup timeout |
+| `tsbridge.global.response_header_timeout` | `0s` | Time allowed for backend response headers; zero disables it |
+| `tsbridge.global.access_log` | `true` | Enable access logging |
+| `tsbridge.global.trusted_proxies` | none | Comma-separated trusted proxy IPs or CIDR ranges |
+| `tsbridge.global.dial_timeout` | `30s` | Backend connection timeout |
+| `tsbridge.global.keep_alive_timeout` | `30s` | Backend TCP keep-alive interval |
+| `tsbridge.global.idle_conn_timeout` | `90s` | Backend idle connection timeout |
+| `tsbridge.global.tls_handshake_timeout` | `10s` | Backend TLS handshake timeout |
+| `tsbridge.global.expect_continue_timeout` | `1s` | Wait for a backend `100 Continue` response |
+| `tsbridge.global.metrics_read_header_timeout` | `5s` | Metrics server header timeout |
+| `tsbridge.global.flush_interval` | `0s` | Response flush interval; `-1ms` flushes immediately |
+| `tsbridge.global.max_request_body_size` | `50MB` | Request body limit; `-1` disables it |
+
+### Labels on service containers
+
+`tsbridge.enabled=true` opts a container into discovery. Set either `tsbridge.service.port` or `tsbridge.service.backend_addr`; when both are absent, tsbridge uses the container's only exposed port.
+
+| Label | Default | Purpose |
+|------|---------|---------|
+| `tsbridge.enabled` | `false` | Enable discovery for this container |
+| `tsbridge.service.name` | container name | Tailscale hostname |
+| `tsbridge.service.port` | single exposed port | Port reached through the container's Docker name |
+| `tsbridge.service.backend_addr` | derived from port | Explicit backend address; takes precedence over `port` |
+| `tsbridge.service.tags` | `default_tags` | Comma-separated Tailscale tags |
+| `tsbridge.service.whois_enabled` | `false` | Add trusted `X-Tailscale-*` identity headers |
+| `tsbridge.service.whois_timeout` | `5s` | Whois lookup timeout |
+| `tsbridge.service.tls_mode` | `auto` | `auto` for Tailscale HTTPS or `off` for HTTP |
+| `tsbridge.service.listen_addr` | `:443` or `:80` | Listen address selected from TLS mode |
+| `tsbridge.service.funnel_enabled` | `false` | Expose the service through Tailscale Funnel |
+| `tsbridge.service.ephemeral` | `false` | Create an ephemeral Tailscale node |
+| `tsbridge.service.oauth_preauthorized` | Tailscale setting (`true`) | Override OAuth auth-key preauthorization |
+| `tsbridge.service.insecure_skip_verify` | `false` | Skip certificate verification for HTTPS backends |
+| `tsbridge.service.startup_timeout` | global value | Override tsnet startup timeout |
+| `tsbridge.service.read_header_timeout` | global value | Override request header timeout |
+| `tsbridge.service.write_timeout` | global value | Override response write timeout |
+| `tsbridge.service.idle_timeout` | global value | Override HTTP keep-alive idle timeout |
+| `tsbridge.service.response_header_timeout` | global value | Override backend response header timeout |
+| `tsbridge.service.flush_interval` | global value | Override response flush interval |
+| `tsbridge.service.access_log` | global value | Override access logging |
+| `tsbridge.service.max_request_body_size` | global value | Override request body limit |
+| `tsbridge.service.upstream_headers.<name>` | none | Set a request header sent to the backend |
+| `tsbridge.service.downstream_headers.<name>` | none | Set a response header sent to the client |
+| `tsbridge.service.remove_upstream` | none | Remove comma-separated request headers |
+| `tsbridge.service.remove_downstream` | none | Remove comma-separated response headers |
 
 ## Backend Address Tips
 
