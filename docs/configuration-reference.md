@@ -105,12 +105,11 @@ In this configuration:
 
 1. Open Settings, then OAuth clients, in the Tailscale admin console
 2. Click Generate OAuth client...
-3. Configure:
-   - Scopes: Check both Read and Write under Auth Keys
-   - Tags: Select `tag:tsbridge` (the parent tag, NOT the service tags)
-4. Save the credentials
+3. Enable Read and Write under Auth Keys
+4. Select `tag:tsbridge`, the parent tag, rather than a service tag
+5. Save the credentials
 
-Important: Select only the parent tag for the OAuth client. This grants permission to create auth keys for all tags it owns.
+Select only the parent tag for the OAuth client. The parent grants permission to create auth keys for every tag it owns.
 
 #### Using Tag Hierarchies in tsbridge
 

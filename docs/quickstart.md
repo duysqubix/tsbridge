@@ -107,7 +107,7 @@ downstream_headers = {
 services:
   tsbridge:
     image: ghcr.io/jtdowney/tsbridge:latest
-    command: ["--provider", "docker"]
+    command: ["-provider", "docker"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - tsbridge-state:/var/lib/tsbridge

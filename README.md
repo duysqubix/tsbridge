@@ -82,7 +82,7 @@ Here are a few common settings:
 
 ### Security
 
-> Security Note: tsbridge is intended for homelabs and development environments. It hasn't been hardened or battle-tested for production workloads. See [THREAT_MODEL.md](THREAT_MODEL.md) for details.
+> tsbridge targets homelabs and development environments. It has not been hardened or battle-tested for production workloads. See [THREAT_MODEL.md](THREAT_MODEL.md).
 
 For enhanced security using tag ownership, see [Tag Ownership and OAuth Security](docs/configuration-reference.md#tag-ownership-and-oauth-security).
 
@@ -106,7 +106,7 @@ tsbridge can watch Docker and automatically expose containers based on their lab
 services:
   tsbridge:
     image: ghcr.io/jtdowney/tsbridge:latest
-    command: ["--provider", "docker"]
+    command: ["-provider", "docker"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock # Required for label discovery
       - tsbridge-state:/var/lib/tsbridge
@@ -132,7 +132,7 @@ volumes:
 
 See [docs/docker-labels.md](docs/docker-labels.md) for the full label reference.
 
-> Note: The `default_tags` must match or be owned by your OAuth client's tag. Individual services can override this with their own `tags` label. See [Tag Ownership and OAuth Security](docs/configuration-reference.md#tag-ownership-and-oauth-security) for setup details.
+> `default_tags` must match the OAuth client's tag or a tag it owns. A service can override them with its `tags` label. See [Tag Ownership and OAuth Security](docs/configuration-reference.md#tag-ownership-and-oauth-security).
 
 ## Headscale
 

@@ -59,7 +59,7 @@ services:
     environment:
       # When using Headscale, we'll use auth keys instead of OAuth
       - TS_AUTHKEY=${TS_AUTHKEY}
-    command: ["--provider", "docker", "--verbose"]
+    command: ["-provider", "docker", "-verbose"]
     labels:
       # Tailscale configuration
       - "tsbridge.tailscale.control_url=http://headscale:8080"

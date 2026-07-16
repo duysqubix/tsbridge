@@ -1,7 +1,7 @@
 services:
   tsbridge:
     image: ghcr.io/jtdowney/tsbridge:latest
-    command: ["--provider", "docker", "--verbose"]
+    command: ["-provider", "docker", "-verbose"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - tsbridge-state:/var/lib/tsbridge

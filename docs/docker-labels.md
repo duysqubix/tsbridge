@@ -8,7 +8,7 @@ Run tsbridge in Docker and let it discover services automatically via container 
 services:
   tsbridge:
     image: ghcr.io/jtdowney/tsbridge:latest
-    command: ["--provider", "docker"]
+    command: ["-provider", "docker"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - tsbridge-state:/var/lib/tsbridge
@@ -36,7 +36,7 @@ volumes:
 
 Your app is now at `https://myapp.<tailnet>.ts.net`
 
-> Note: The `default_tags` must match or be owned by your OAuth client's tag. Individual services can override this with their own `tags` label. See [Tag Ownership and OAuth Security](configuration-reference.md#tag-ownership-and-oauth-security) for setup details.
+> `default_tags` must match the OAuth client's tag or a tag it owns. A service can override them with its `tags` label. See [Tag Ownership and OAuth Security](configuration-reference.md#tag-ownership-and-oauth-security).
 
 ## How It Works
 
@@ -51,15 +51,13 @@ When using the Docker provider, these flags are available:
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--provider` | `file` | Set to `docker` for Docker label discovery |
-| `--docker-socket` | `unix:///var/run/docker.sock` | Docker socket endpoint |
-| `--docker-label-prefix` | `tsbridge` | Prefix for container labels |
-| `--docker-poll-interval` | `1m` | Periodic config poll interval (0 to disable) |
-
-Example:
+| `-provider` | `file` | Set to `docker` for Docker label discovery |
+| `-docker-socket` | `unix:///var/run/docker.sock` | Docker socket endpoint |
+| `-docker-label-prefix` | `tsbridge` | Prefix for container labels |
+| `-docker-poll-interval` | `1m` | Periodic config poll interval (0 to disable) |
 
 ```bash
-tsbridge --provider docker --docker-poll-interval 30s
+tsbridge -provider docker -docker-poll-interval 30s
 ```
 
 ## Docker Socket Configuration
@@ -82,7 +80,7 @@ Example with DOCKER_HOST:
 services:
   tsbridge:
     image: ghcr.io/jtdowney/tsbridge:latest
-    command: ["--provider", "docker"]
+    command: ["-provider", "docker"]
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
       - TS_OAUTH_CLIENT_ID=${TS_OAUTH_CLIENT_ID}
@@ -256,7 +254,7 @@ labels:
 services:
   tsbridge:
     image: ghcr.io/jtdowney/tsbridge:latest
-    command: ["--provider", "docker", "--verbose"]
+    command: ["-provider", "docker", "-verbose"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - tsbridge-state:/var/lib/tsbridge
@@ -332,7 +330,7 @@ When everything is in one compose file, Docker automatically creates a shared ne
 services:
   tsbridge:
     image: ghcr.io/jtdowney/tsbridge:latest
-    command: ["--provider", "docker"]
+    command: ["-provider", "docker"]
     # ... other config
 
   myapp:
@@ -359,7 +357,7 @@ docker network create tsbridge-network
 services:
   tsbridge:
     image: ghcr.io/jtdowney/tsbridge:latest
-    command: ["--provider", "docker"]
+    command: ["-provider", "docker"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
@@ -461,7 +459,7 @@ Service not appearing?
 
 - Check `tsbridge.enabled=true` is set
 - Verify containers are on same network - use `docker network ls` and `docker inspect <container>`
-- Look at tsbridge logs with `--verbose`
+- Look at tsbridge logs with `-verbose`
 
 Connection refused?
 
