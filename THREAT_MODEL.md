@@ -2,45 +2,44 @@
 
 ## Overview
 
-tsbridge is a Go-based proxy manager built on Tailscale's tsnet library, designed to expose multiple services on a Tailnet through a single configuration file. The threat model defines tsbridge's security assumptions, intended uses, and known limitations.
+tsbridge exposes multiple backend services through isolated tsnet nodes. It relies on Tailscale for network identity and access control.
 
 ## Intended Use Case
 
-tsbridge is designed for relatively trusted environments such as:
+Use tsbridge in relatively trusted environments:
 
 - Home labs
 - Personal development environments
 - Small team internal networks
 - Testing and staging environments
 
-tsbridge is NOT designed for:
+Do not use tsbridge for:
 
-- Security-critical production environments
-- Public-facing internet services
+- Security-critical production workloads
+- Public internet services, except services intentionally exposed through Funnel
 - High-security enterprise deployments
-- Environments requiring strict compliance (PCI-DSS, HIPAA, etc.)
+- Workloads subject to strict compliance requirements such as PCI DSS or HIPAA
 
 ## Trust Boundaries
 
 ### Trusted Components
 
-1. Tailscale Network: The Tailnet is considered trusted; all nodes authenticated via Tailscale are trusted
-2. Configuration Source: The TOML configuration file or Docker labels are trusted inputs
-3. Backend Services: All configured backend services are trusted
-4. Host System: The system running tsbridge is fully trusted
+- Trust the Tailnet identities and ACL policy enforced by Tailscale.
+- Treat the TOML configuration file and Docker labels as trusted input.
+- Trust every configured backend service.
+- Trust the host running tsbridge.
 
 ### Untrusted Components
 
-1. External Networks: Any network outside the Tailnet
-2. Unauthenticated Requests: Requests not authenticated by Tailscale
+- Treat networks outside the Tailnet as untrusted.
+- Treat requests without a Tailscale identity as untrusted.
 
 ## Security Model
 
 ### Authentication & Authorization
 
-- Primary Security: Relies entirely on Tailscale's authentication and network security
-- No Additional Auth: tsbridge does not implement its own authentication layer
-- Network-Level Security: Security is enforced at the network level via Tailscale ACLs
+- Tailscale authenticates nodes and enforces network access through ACLs.
+- tsbridge adds no application-level authentication or authorization.
 
 ### Data Protection
 
@@ -59,15 +58,15 @@ tsbridge is NOT designed for:
 
 ### 2. Service Exposure
 
-- Any service configured in tsbridge is accessible to all Tailnet members (subject to Tailscale ACLs)
-- No per-service authentication is implemented
-- Funnel mode exposes services to the public internet (use with extreme caution)
+- Tailscale ACLs determine which Tailnet members can reach each service.
+- tsbridge adds no per-service authentication.
+- Funnel publishes a service to the internet.
 
 ### 3. Configuration Security
 
-- Configuration files may contain sensitive data (OAuth tokens)
-- File permissions should be restricted (recommended: 600)
-- Docker labels are visible to anyone with Docker API access
+- Configuration files may contain OAuth credentials and other secrets.
+- Restrict files containing secrets to mode `0600`.
+- Anyone with Docker API access can read container labels.
 
 ### 4. Resource Limits
 
@@ -85,11 +84,11 @@ tsbridge is NOT designed for:
 
 ### Out of Scope Threats
 
-1. Malicious Backend Services: Compromised backend services
-2. Host System Compromise: Root access to tsbridge host
-3. Tailscale Infrastructure Compromise: Issues with Tailscale's security
-4. Side-Channel Attacks: Timing attacks, cache attacks, etc.
-5. Supply Chain Attacks: Compromised dependencies
+- Compromise of a configured backend service
+- Root access to the tsbridge host
+- Compromise of Tailscale infrastructure
+- Side-channel attacks such as timing or cache attacks
+- Compromised build or runtime dependencies
 
 ## Security Best Practices
 

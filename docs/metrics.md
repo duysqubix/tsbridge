@@ -1,17 +1,17 @@
 # Metrics
 
-tsbridge exposes Prometheus metrics for monitoring and alerting.
+tsbridge publishes Prometheus metrics for requests, connections, Whois lookups, service changes, and configuration reloads.
 
 ## Enabling Metrics
 
-Set the metrics endpoint in your config:
+Set a metrics listen address:
 
 ```toml
 [global]
-metrics_addr = ":9090"  # Listen on all interfaces, port 9090
+metrics_addr = "127.0.0.1:9090"
 ```
 
-Access metrics at `http://localhost:9090/metrics`
+Scrape `http://127.0.0.1:9090/metrics`. The endpoint has no authentication. Use `:9090` only when the surrounding network protects access.
 
 ## Available Metrics
 
@@ -19,10 +19,7 @@ Access metrics at `http://localhost:9090/metrics`
 
 #### tsbridge_requests_total
 
-- Type: Counter
-- Labels: `service`, `status` (HTTP status code)
-- Description: Total number of HTTP requests processed
-- Use case: Request rate, success/error ratios
+Counter labeled by `service` and HTTP `status`. It counts completed requests.
 
 ```promql
 # Request rate per service
@@ -34,10 +31,7 @@ rate(tsbridge_requests_total{status!~"2.."}[5m])
 
 #### tsbridge_request_duration_seconds
 
-- Type: Histogram
-- Labels: `service`
-- Description: Request processing time in seconds
-- Use case: Latency monitoring, SLO tracking
+Histogram labeled by `service`. It measures request handling time in seconds.
 
 ```promql
 # 95th percentile latency per service
@@ -53,9 +47,7 @@ rate(tsbridge_request_duration_seconds_sum[5m]) / rate(tsbridge_request_duration
 
 #### tsbridge_errors_total
 
-- Type: Counter
-- Labels: `service`, `type`
-- The only emitted `type` value is `panic`, recorded when a request handler panics.
+Counter labeled by `service` and error `type`. The only emitted type is `panic`, recorded when a request handler panics.
 
 ```promql
 # Error rate by type
@@ -66,26 +58,17 @@ rate(tsbridge_errors_total[5m])
 
 #### tsbridge_connections_active
 
-- Type: Gauge
-- Labels: `service`
-- Description: Current connections managed by the HTTP server. Excludes hijacked connections, including WebSockets after upgrade.
-- Use case: HTTP server connection load monitoring
+Gauge labeled by `service`. It counts connections managed by the HTTP server and excludes hijacked connections, including WebSockets after upgrade.
 
 #### tsbridge_connection_pool_active
 
-- Type: Gauge
-- Labels: `service`
-- Description: Active requests to backend (in-flight requests)
-- Use case: Backend load monitoring
+Gauge labeled by `service`. It counts in-flight backend requests.
 
 ### Whois Metrics
 
 #### tsbridge_whois_duration_seconds
 
-- Type: Histogram
-- Labels: `service`
-- Description: Time taken for Tailscale whois lookups
-- Use case: Monitor whois performance
+Histogram labeled by `service`. It measures successful Tailscale Whois lookups in seconds.
 
 ```promql
 # Whois lookup latency
@@ -96,17 +79,11 @@ histogram_quantile(0.99, rate(tsbridge_whois_duration_seconds_bucket[5m]))
 
 #### tsbridge_services_active
 
-- Type: Gauge
-- Description: Number of currently active services
-- Use case: Track service count
+Gauge containing the current number of active services.
 
 #### tsbridge_service_operations_total
 
-- Type: Counter
-- Labels: `operation`, `status`
-- Operations: `add`, `remove`, `update`
-- Status: `success`, `failure`
-- Description: Service lifecycle operations
+Counter labeled by `operation` (`add`, `remove`, or `update`) and `status` (`success` or `failure`).
 
 ```promql
 # Service operation failure rate
@@ -115,23 +92,17 @@ rate(tsbridge_service_operations_total{status="failure"}[5m])
 
 #### tsbridge_service_operation_duration_seconds
 
-- Type: Histogram
-- Labels: `operation`
-- Description: Time taken for service operations
-- Use case: Monitor startup/shutdown performance
+Histogram labeled by `operation`. It measures service add, remove, and update time in seconds.
 
 ### Configuration
 
 #### tsbridge_config_reloads_total
 
-- Type: Counter
-- Labels: `status` (`success` or `failure`)
-- Counts provider-driven configuration reload attempts. The Docker provider emits this metric when container events or polling produce a new configuration. The file provider does not watch TOML files.
+Counter labeled by `status` (`success` or `failure`). The Docker provider increments it when container events or polling produce a new configuration. The file provider does not watch TOML files.
 
 #### tsbridge_config_reload_duration_seconds
 
-- Type: Histogram
-- Measures provider-driven configuration reload time.
+Histogram measuring provider-driven configuration reload time in seconds.
 
 ## Example Queries
 
