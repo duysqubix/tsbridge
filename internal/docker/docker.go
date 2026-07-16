@@ -184,7 +184,10 @@ func (p *Provider) Load(ctx context.Context) (*config.Config, error) {
 	// Parse global configuration from tsbridge container labels
 	cfg := &config.Config{}
 	if err := p.parseGlobalConfig(selfContainer, cfg); err != nil {
-		return nil, errors.WrapProviderError(err, "docker", errors.ErrTypeConfig, "parsing global configuration")
+		if p.lastConfig != nil {
+			return nil, errors.WrapProviderError(err, "docker", errors.ErrTypeConfig, "parsing global configuration")
+		}
+		slog.Warn("invalid global Docker configuration; using defaults for invalid labels", "error", err)
 	}
 
 	// Reuse cached Tailscale config on subsequent loads. The initial

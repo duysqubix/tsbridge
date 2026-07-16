@@ -1364,6 +1364,44 @@ func TestProvider_Load(t *testing.T) {
 		require.NotNil(t, cfg.Services[0].WhoisTimeout)
 		assert.Equal(t, 5*time.Second, *cfg.Services[0].WhoisTimeout)
 	})
+	t.Run("malformed global label uses default on initial load", func(t *testing.T) {
+		mockClient := newMockDockerClient()
+
+		tsbridgeContainer := createTsbridgeContainer("tsbridge123")
+		tsbridgeContainer.Labels["tsbridge.global.write_timeout"] = "30sec"
+		mockClient.containers = []container.Summary{tsbridgeContainer}
+
+		provider := &Provider{
+			client:      mockClient,
+			labelPrefix: "tsbridge",
+		}
+
+		cfg, err := provider.Load(context.Background())
+		require.NoError(t, err)
+		require.NotNil(t, cfg.Global.WriteTimeout)
+		assert.Equal(t, 30*time.Second, *cfg.Global.WriteTimeout)
+	})
+	t.Run("malformed global label rejects reload", func(t *testing.T) {
+		mockClient := newMockDockerClient()
+
+		tsbridgeContainer := createTsbridgeContainer("tsbridge123")
+		mockClient.containers = []container.Summary{tsbridgeContainer}
+
+		provider := &Provider{
+			client:      mockClient,
+			labelPrefix: "tsbridge",
+		}
+
+		_, err := provider.Load(context.Background())
+		require.NoError(t, err)
+
+		tsbridgeContainer.Labels["tsbridge.global.write_timeout"] = "30sec"
+		mockClient.containers = []container.Summary{tsbridgeContainer}
+
+		_, err = provider.Load(context.Background())
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "global.write_timeout")
+	})
 }
 
 func TestProvider_Watch_Enhanced(t *testing.T) {
