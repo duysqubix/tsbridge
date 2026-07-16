@@ -44,20 +44,18 @@ tsbridge is NOT designed for:
 
 ### Data Protection
 
-- Encryption in Transit: Provided by Tailscale's WireGuard implementation
-- No Data at Rest: tsbridge does not store persistent data
-- Secret Management:
-  - OAuth credentials can be provided via files or environment variables
-  - Secrets are redacted in logs but held in memory unencrypted
+- Tailscale encrypts Tailnet traffic with WireGuard.
+- Each service stores tsnet node state under its state directory. tsbridge does not store proxied request or response bodies.
+- OAuth credentials can come from files or environment variables. tsbridge redacts secrets in logs but holds them unencrypted in memory.
 
 ## Known Security Considerations
 
 ### 1. Proxy Trust Model
 
-- tsbridge acts as a reverse proxy with full access to request/response data
-- No request filtering or sanitization is performed
-- All headers (except `Host`) are forwarded as-is
-- Response bodies are streamed without inspection
+- tsbridge can read and modify all proxied request and response data.
+- Incoming `X-Tailscale-*` headers are removed before optional Whois middleware adds trusted identity headers.
+- Operators can add or remove configured upstream and downstream headers. Go's reverse proxy also manages `Host` and forwarding headers.
+- Response bodies pass through without content inspection.
 
 ### 2. Service Exposure
 
@@ -73,16 +71,15 @@ tsbridge is NOT designed for:
 
 ### 4. Resource Limits
 
-- No built-in rate limiting
-- No request size limits
-- No connection limits
-- Vulnerable to resource exhaustion from trusted Tailnet members
+- tsbridge has no built-in rate or connection limits.
+- Request bodies are limited to 50 MiB by default. Operators can change or disable the limit globally or per service.
+- Trusted Tailnet members can still exhaust connections, memory, CPU, or backend capacity.
 
 ### 5. Logging & Monitoring
 
-- Access logs may contain sensitive information
-- Whois data includes user identities
-- Metrics endpoint has no authentication (binds to localhost by default)
+- Access logs may contain sensitive information.
+- Whois data includes user identities.
+- The metrics endpoint has no authentication. Metrics are disabled by default; the configured listen address determines network exposure.
 
 ## Threat Scenarios
 
@@ -118,17 +115,17 @@ tsbridge is NOT designed for:
 
 ### Monitoring
 
-1. Enable Prometheus metrics (localhost only)
-2. Monitor for unusual access patterns
-3. Set up alerts for error rates
-4. Track backend health status
+1. Bind Prometheus metrics to `127.0.0.1` or another protected interface
+2. Monitor unusual access patterns
+3. Alert on request failures and service lifecycle failures
+4. Monitor backend health outside tsbridge
 
 ## Security Updates
 
-- tsbridge follows Go's security update cycle
-- Dependencies are regularly updated
-- Security issues should be reported via GitHub issues (public project)
-- No formal security advisory process exists
+- tsbridge follows Go's security update cycle.
+- Dependencies receive regular updates.
+- Report vulnerabilities through the private process in [SECURITY.md](SECURITY.md).
+- Security fixes are released as patch versions after verification.
 
 ## Disclaimer
 
