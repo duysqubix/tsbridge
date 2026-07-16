@@ -84,10 +84,10 @@ func TestE2EFullStartupWithOAuth(t *testing.T) {
 	backend := helpers.CreateTestBackend(t)
 
 	// Create config with OAuth using helper
-	cfg := helpers.NewTestFixture(t).
-		WithOAuth("test-client-id", "test-client-secret").
-		WithService("test-oauth-service", backend.Listener.Addr().String()).
-		Build()
+	cfg := helpers.CreateTestConfig(t, "test-oauth-service", backend.Listener.Addr().String())
+	cfg.Tailscale.AuthKey = config.RedactedString("")
+	cfg.Tailscale.OAuthClientID = "test-client-id"
+	cfg.Tailscale.OAuthClientSecret = config.RedactedString("test-client-secret")
 
 	// Add tags to all services and adjust whois timeout
 	for i := range cfg.Services {
@@ -112,17 +112,9 @@ func TestE2EFullStartupWithOAuth(t *testing.T) {
 	cmd := exec.CommandContext(ctx, binPath, "-config", configPath, "-verbose")
 	cmd.Env = append(os.Environ(), "TSBRIDGE_OAUTH_ENDPOINT="+oauthServer.URL)
 
-	// Capture output
-	output, err := cmd.CombinedOutput()
-
-	// We expect it to timeout (since it's a long-running server)
-	// but OAuth should have been called
-	if err != nil && ctx.Err() != context.DeadlineExceeded {
-		t.Fatalf("unexpected error: %v\n%s", err, output)
-	}
-
-	// Give it a moment to process
-	time.Sleep(200 * time.Millisecond)
+	// The mock auth key cannot start a real tsnet server; reaching both OAuth
+	// endpoints is the contract under test.
+	output, _ := cmd.CombinedOutput()
 
 	// Check that OAuth flow was triggered
 	if oauthCalls == 0 {

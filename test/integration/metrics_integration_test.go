@@ -73,9 +73,7 @@ func TestMetricsEndpointWithRealServer(t *testing.T) {
 	defer backend.Close()
 
 	// Create config with specific metrics port
-	cfg := helpers.NewTestFixture(t).
-		WithService("test-metrics-api", backend.Listener.Addr().String()).
-		Build()
+	cfg := helpers.CreateTestConfig(t, "test-metrics-api", backend.Listener.Addr().String())
 	cfg.Global.MetricsAddr = "localhost:9999"
 
 	// Write config and build binary
