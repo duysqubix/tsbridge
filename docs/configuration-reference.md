@@ -19,16 +19,16 @@ Complete reference for all tsbridge configuration options.
 
 ### Authentication
 
-You must provide either OAuth credentials OR an auth key.
+Provide either OAuth credentials or an auth key.
 
-> Resolution Order: tsbridge resolves secret values in the following priority order:
+> tsbridge resolves each secret in this order:
 >
-> 1. Direct value (inline in config file)
-> 2. File (from `_file` suffix)
-> 3. Environment variable (from `_env` suffix)
-> 4. Default environment variable (e.g., `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_CLIENT_SECRET`, `TS_AUTHKEY`)
+> 1. Direct value
+> 2. File named by the `_file` setting
+> 3. Environment variable named by the `_env` setting
+> 4. Default environment variable, such as `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_CLIENT_SECRET`, or `TS_AUTHKEY`
 >
-> If any configured source (file or env var) is specified but cannot be accessed or is empty, tsbridge will return an error instead of falling back to the next priority level.
+> A direct value wins even when `_file` or `_env` is also set. If a configured file or environment variable fails, tsbridge uses the default environment variable when it is set; otherwise, validation fails.
 
 #### OAuth Credentials
 
@@ -131,18 +131,18 @@ This approach provides centralized permission management while maintaining clear
 
 ## [global] Section
 
-All settings here provide defaults that can be overridden per-service.
+These settings apply globally. Services can override only the fields listed under [Service-Specific Overrides](#service-specific-overrides).
 
 ### Timeouts
 
-All timeouts use Go duration format (`"30s"`, `"5m"`, `"1h30m"`). Set to `"0s"` to disable.
+Timeouts use Go duration format (`"30s"`, `"5m"`, `"1h30m"`). Most accept `"0s"` to disable the timeout. `shutdown_timeout` and `startup_timeout` must be greater than zero.
 
 ```toml
 # Server timeouts
 read_header_timeout = "30s"      # Time to read request headers (default: 30s)
 write_timeout = "30s"            # Time to write response (default: 30s)
 idle_timeout = "120s"            # Keep-alive timeout (default: 120s)
-shutdown_timeout = "15s"         # Graceful shutdown timeout (default: 15s)
+shutdown_timeout = "30s"         # Graceful shutdown timeout (default: 30s)
 startup_timeout = "30s"          # Tailscale server startup timeout (default: 30s)
 
 # Backend connection timeouts
@@ -191,7 +191,7 @@ trusted_proxies = ["10.0.0.0/8", "172.16.0.0/12", "192.168.1.1"]
 
 ## [[services]] Section
 
-Each service requires `name` and `backend_addr`. All global settings can be overridden.
+Each service requires `name` and `backend_addr`. A service can override selected global defaults.
 
 ### Basic Configuration
 
@@ -249,8 +249,8 @@ listen_addr = "0.0.0.0:8443"  # Listen on specific address and port (default: ":
 
 ```toml
 # Whois identity headers
-whois_enabled = true       # Add X-Tailscale-User headers (default: false)
-whois_timeout = "1s"       # Whois lookup timeout (default: from global or 1s)
+whois_enabled = true       # Add X-Tailscale-* identity headers (default: false)
+whois_timeout = "5s"       # Whois lookup timeout (default: 5s)
 
 # Funnel (public access)
 funnel_enabled = true      # Expose to internet via Funnel (default: false)
@@ -285,7 +285,7 @@ remove_downstream = ["Server", "X-Powered-By"]
 
 ### Service-Specific Overrides
 
-Any global setting can be overridden:
+Services can override `startup_timeout`, `read_header_timeout`, `write_timeout`, `idle_timeout`, `response_header_timeout`, `flush_interval`, `access_log`, and `max_request_body_size`:
 
 ```toml
 [[services]]
@@ -316,33 +316,29 @@ Default environment variables checked if no config specified:
 
 ## Secret Resolution
 
-tsbridge resolves secrets using different modes based on what you specify:
+For each secret, a direct value takes precedence over `_file`, which takes precedence over `_env`.
 
-Direct mode (when you set a value directly):
-
-```toml
-oauth_client_id = "k12...89"  # This value is used
-```
-
-Environment variable mode (when you use `_env`):
+Direct value:
 
 ```toml
-oauth_client_id_env = "MY_CUSTOM_VAR"  # Reads from MY_CUSTOM_VAR
-# Must be set; if unset or empty, tsbridge returns an error.
-# Fallback to TS_OAUTH_CLIENT_ID is used only when no oauth_client_id/_env/_file is configured at all.
+oauth_client_id = "k12...89"
 ```
 
-File mode (when you use `_file`):
+Named environment variable:
 
 ```toml
-oauth_client_id_file = "/path/to/file"  # Reads from file
-# Must be readable; if missing or unreadable, tsbridge returns an error.
-# Fallback to TS_OAUTH_CLIENT_ID is used only when no oauth_client_id/_env/_file is configured at all.
+oauth_client_id_env = "MY_CUSTOM_VAR"
 ```
 
-Important: If you specify `_env` or `_file`, any direct value is ignored. You cannot mix modes.
+Named file:
 
-Override: Environment variables prefixed with `TSBRIDGE_` can override any configuration:
+```toml
+oauth_client_id_file = "/path/to/file"
+```
+
+If a configured environment variable is empty or a configured file cannot be read, tsbridge checks the corresponding default environment variable. It returns the original source error when the default variable is also empty.
+
+Environment variables prefixed with `TSBRIDGE_` can override scalar settings in the `[tailscale]` and `[global]` sections:
 
 - `TSBRIDGE_TAILSCALE_OAUTH_CLIENT_ID` overrides `tailscale.oauth_client_id`
 - `TSBRIDGE_GLOBAL_METRICS_ADDR` overrides `global.metrics_addr`

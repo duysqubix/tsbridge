@@ -5,7 +5,7 @@ Run tsbridge on FreeBSD with the rc.d init system.
 ## Prerequisites
 
 - FreeBSD
-- Go 1.24+ (for building from source)
+- Go 1.26.4 or newer (for building from source)
 - Tailscale OAuth client credentials
 
 ## Installation
@@ -317,4 +317,4 @@ tsbridge {
 Important files to backup:
 
 - `/usr/local/etc/tsbridge/` (configuration and credentials)
-- `/var/db/tsbridge/` (if persistent state is stored)
+- `/var/db/tsbridge/` (persistent tsnet state)
