@@ -134,14 +134,13 @@ These settings apply globally. Services can override only the fields listed unde
 
 ### Timeouts
 
-Timeouts use Go duration format (`"30s"`, `"5m"`, `"1h30m"`). Most accept `"0s"` to disable the timeout. `shutdown_timeout` and `startup_timeout` must be greater than zero.
+Timeouts use Go duration format (`"30s"`, `"5m"`, `"1h30m"`). Most accept `"0s"` to disable the timeout. `startup_timeout` must be greater than zero.
 
 ```toml
 # Server timeouts
 read_header_timeout = "30s"      # Time to read request headers (default: 30s)
 write_timeout = "30s"            # Time to write response (default: 30s)
 idle_timeout = "120s"            # Keep-alive timeout (default: 120s)
-shutdown_timeout = "30s"         # Graceful shutdown timeout (default: 30s)
 startup_timeout = "30s"          # Tailscale server startup timeout (default: 30s)
 
 # Backend connection timeouts
@@ -374,7 +373,6 @@ default_tags = ["tag:server", "tag:proxy"]
 read_header_timeout = "30s"
 write_timeout = "30s"
 idle_timeout = "120s"
-shutdown_timeout = "30s"
 
 # Backend connection
 dial_timeout = "10s"

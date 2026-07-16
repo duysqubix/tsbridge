@@ -21,7 +21,6 @@ default_tags = ["tag:tsbridge", "tag:proxy"]
 read_header_timeout = "30s"
 write_timeout = "30s"
 idle_timeout = "120s"
-shutdown_timeout = "15s"
 # startup_timeout = "30s"
 
 # Maximum request body size (default: 50MB)
@@ -29,9 +28,6 @@ shutdown_timeout = "15s"
 # Supports units: B, KB, MB, GB, TB (e.g., "10MB", "1.5GB", "100KB")
 # Use -1 to disable the limit entirely
 max_request_body_size = "50MB"
-
-# Whois configuration
-whois_timeout = "1s"
 
 # Enable metrics
 metrics_addr = ":9090"

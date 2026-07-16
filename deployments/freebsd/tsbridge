@@ -38,6 +38,7 @@ rcvar="${name}_enable"
 
 # Paths
 pidfile="/var/run/${name}/${name}.pid"
+supervisor_pidfile="/var/run/${name}/${name}-daemon.pid"
 logfile="/var/log/${name}/${name}.log"
 command="/usr/local/bin/tsbridge"
 command_args="-config ${tsbridge_config} ${tsbridge_flags}"
@@ -83,8 +84,8 @@ tsbridge_start()
     fi
 
     # Start the daemon
-    /usr/sbin/daemon -c -f -p "${pidfile}" -u "${tsbridge_user}" \
-        -o "${logfile}" \
+    /usr/sbin/daemon -c -f -H -P "${supervisor_pidfile}" -p "${pidfile}" \
+        -u "${tsbridge_user}" -o "${logfile}" \
         ${env_cmd} ${command} ${command_args}
 }
 

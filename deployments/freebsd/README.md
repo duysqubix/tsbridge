@@ -79,13 +79,13 @@ default_tags = ["tag:server", "tag:tsbridge"]
 [global]
 access_log = true
 metrics_addr = ":9100"
-whois_timeout = "1s"
 
 # Services (at least one required)
 [[services]]
 name = "wiki"
 backend_addr = "127.0.0.1:8080"
 whois_enabled = true
+whois_timeout = "1s"
 ```
 
 See `config.example.toml` for a complete configuration reference with all available options.

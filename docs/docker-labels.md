@@ -129,7 +129,6 @@ Provide either OAuth credentials or an auth key. OAuth services also require tag
 | `tsbridge.global.read_header_timeout` | `30s` | Time allowed to read request headers |
 | `tsbridge.global.write_timeout` | `30s` | Time allowed to write a response |
 | `tsbridge.global.idle_timeout` | `120s` | HTTP keep-alive idle timeout |
-| `tsbridge.global.shutdown_timeout` | `30s` | Graceful shutdown timeout |
 | `tsbridge.global.startup_timeout` | `30s` | tsnet startup timeout |
 | `tsbridge.global.response_header_timeout` | `0s` | Time allowed for backend response headers; zero disables it |
 | `tsbridge.global.access_log` | `true` | Enable access logging |
@@ -145,11 +144,12 @@ Provide either OAuth credentials or an auth key. OAuth services also require tag
 
 ### Labels on service containers
 
-`tsbridge.enabled=true` opts a container into discovery. Set either `tsbridge.service.port` or `tsbridge.service.backend_addr`; when both are absent, tsbridge uses the container's only exposed port.
+`tsbridge.enabled=true` opts a container into discovery; `tsbridge.enable=true` is an equivalent alias. Set either `tsbridge.service.port` or `tsbridge.service.backend_addr`; when both are absent, tsbridge uses the container's only exposed port.
 
 | Label | Default | Purpose |
 |------|---------|---------|
 | `tsbridge.enabled` | `false` | Enable discovery for this container |
+| `tsbridge.enable` | `false` | Alias for `tsbridge.enabled` |
 | `tsbridge.service.name` | container name | Tailscale hostname |
 | `tsbridge.service.port` | single exposed port | Port reached through the container's Docker name |
 | `tsbridge.service.backend_addr` | derived from port | Explicit backend address; takes precedence over `port` |
@@ -267,6 +267,7 @@ services:
       - "tsbridge.tailscale.oauth_client_id_env=TS_OAUTH_CLIENT_ID"
       - "tsbridge.tailscale.oauth_client_secret_env=TS_OAUTH_CLIENT_SECRET"
       - "tsbridge.tailscale.state_dir=/var/lib/tsbridge"
+      - "tsbridge.tailscale.default_tags=tag:server"
       - "tsbridge.global.metrics_addr=:9090"
     ports:
       - "9090:9090" # Metrics
@@ -366,6 +367,7 @@ services:
     labels:
       - "tsbridge.tailscale.oauth_client_id_env=TS_OAUTH_CLIENT_ID"
       - "tsbridge.tailscale.oauth_client_secret_env=TS_OAUTH_CLIENT_SECRET"
+      - "tsbridge.tailscale.default_tags=tag:server"
     networks:
       - tsbridge-network
 

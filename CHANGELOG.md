@@ -226,10 +226,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **BREAKING:** listen_port configuration field has been replaced by listen_addr (#68)
+- BREAKING: listen_port configuration field has been replaced by listen_addr (#68)
   - Migration: Change `listen_port = 8080` to `listen_addr = ":8080"`
   - For specific interfaces, use `listen_addr = "127.0.0.1:8080"`
-- **BREAKING:** Configuration resolution order is now strict: direct > file > env > default (#67)
+- BREAKING: Configuration resolution order is now strict: direct > file > env > default (#67)
   - Empty environment variables configured with \_env suffix now return an error
   - Previously would silently fall back to defaults
 
@@ -427,7 +427,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **BREAKING:** OAuth tag configuration changes (#25)
+- BREAKING: OAuth tag configuration changes (#25)
   - Renamed `oauth_tags` in `[tailscale]` section to `default_tags`
   - OAuth-authenticated services now MUST have at least one tag (either inherited from `default_tags` or explicitly set via `tags` field)
   - Migration: Update `oauth_tags` to `default_tags` in your configuration files
@@ -530,7 +530,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **BREAKING:** Removed retry configuration (`retry_count`, `retry_delay`, `retry_strategy`, `max_retry_attempts`)
+- BREAKING: Removed retry configuration (`retry_count`, `retry_delay`, `retry_strategy`, `max_retry_attempts`)
 - Simplified architecture to use lazy connections instead of startup validation
 - Services now always start successfully and handle backend connection failures at request time by returning appropriate HTTP error codes (502/504)
 - Replaced Docker polling with event-based monitoring for better performance and resource usage
