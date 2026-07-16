@@ -18,6 +18,7 @@ import (
 	"github.com/jtdowney/tsbridge/internal/middleware"
 	"github.com/jtdowney/tsbridge/internal/proxy"
 	"github.com/jtdowney/tsbridge/internal/tailscale"
+	"github.com/jtdowney/tsbridge/internal/testutil"
 	"github.com/jtdowney/tsbridge/internal/tsnet"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
@@ -39,27 +40,6 @@ func testTailscaleServerFactory() (*tailscale.Server, error) {
 	}
 
 	return tailscale.NewServerWithFactory(cfg, factory)
-}
-
-// startEchoBackend starts a TCP listener that accepts and immediately closes
-// connections, returning its address. The listener is closed when the test ends.
-func startEchoBackend(t *testing.T) string {
-	t.Helper()
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-	t.Cleanup(func() { listener.Close() })
-
-	go func() {
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				return
-			}
-			conn.Close()
-		}
-	}()
-
-	return listener.Addr().String()
 }
 
 // MockWhoisAdapter adapts a whois func to the WhoisClient interface
@@ -99,7 +79,7 @@ func TestRegistry_GetMetricsCollector(t *testing.T) {
 }
 
 func TestRegistry_StartServices(t *testing.T) {
-	backendAddr := startEchoBackend(t)
+	backendAddr := testutil.CreateTestTCPBackend(t)
 
 	// Create config with services
 	cfg := &config.Config{
@@ -1135,7 +1115,7 @@ func TestService_NameField(t *testing.T) {
 
 // TestRegistry_StartServices_SetsServiceName verifies that startService sets the Name field
 func TestRegistry_StartServices_SetsServiceName(t *testing.T) {
-	backendAddr := startEchoBackend(t)
+	backendAddr := testutil.CreateTestTCPBackend(t)
 
 	// Create config with services
 	cfg := &config.Config{
@@ -1188,7 +1168,7 @@ func TestRegistry_StartServices_SetsServiceName(t *testing.T) {
 
 // TestRegistry_ServicesAsMap verifies that Registry stores services in a map
 func TestRegistry_ServicesAsMap(t *testing.T) {
-	backendAddr := startEchoBackend(t)
+	backendAddr := testutil.CreateTestTCPBackend(t)
 
 	// Create config with services
 	cfg := &config.Config{
@@ -1245,7 +1225,7 @@ func TestRegistry_ServicesAsMap(t *testing.T) {
 
 // TestRegistry_GetService verifies the GetService method
 func TestRegistry_GetService(t *testing.T) {
-	backendAddr := startEchoBackend(t)
+	backendAddr := testutil.CreateTestTCPBackend(t)
 
 	// Create config with services
 	cfg := &config.Config{

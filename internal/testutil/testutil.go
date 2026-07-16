@@ -41,6 +41,27 @@ func CreateTestUnixSocket(t *testing.T) string {
 	return socketPath
 }
 
+// CreateTestTCPBackend creates a TCP backend that accepts and closes connections.
+func CreateTestTCPBackend(t *testing.T) string {
+	t.Helper()
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { listener.Close() })
+
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			conn.Close()
+		}
+	}()
+
+	return listener.Addr().String()
+}
+
 // CreateMockTailscaleServer creates a mock tailscale server for testing.
 // If cfg is empty, it will use default test values.
 func CreateMockTailscaleServer(t *testing.T, cfg config.Tailscale) *tailscale.Server {

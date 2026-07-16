@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -48,27 +47,6 @@ func createTestConfig(t *testing.T) *config.Config {
 // mockTSNetFactory returns a factory that produces mock tsnet servers.
 func mockTSNetFactory(serviceName string) tsnet.TSNetServer {
 	return tsnet.NewMockTSNetServer()
-}
-
-// startAcceptingBackend starts a TCP listener that accepts and immediately
-// closes connections, returning its address. The listener is closed on cleanup.
-func startAcceptingBackend(t *testing.T) string {
-	t.Helper()
-	backend, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-	t.Cleanup(func() { backend.Close() })
-
-	go func() {
-		for {
-			conn, err := backend.Accept()
-			if err != nil {
-				return
-			}
-			conn.Close()
-		}
-	}()
-
-	return backend.Addr().String()
 }
 
 func TestNewApp(t *testing.T) {
@@ -423,7 +401,7 @@ func TestAppStartDoesNotBlockShutdown(t *testing.T) {
 
 func TestAppStartWithPartialServiceFailures(t *testing.T) {
 	t.Run("app continues when some services fail", func(t *testing.T) {
-		backendAddr := startAcceptingBackend(t)
+		backendAddr := testutil.CreateTestTCPBackend(t)
 
 		// Create config with 3 services, 2 will fail
 		cfg := &config.Config{
@@ -514,7 +492,7 @@ func TestAppStartWithPartialServiceFailures(t *testing.T) {
 	})
 
 	t.Run("metrics server continues when some services fail", func(t *testing.T) {
-		backendAddr := startAcceptingBackend(t)
+		backendAddr := testutil.CreateTestTCPBackend(t)
 
 		// Create config with metrics and mixed services
 		cfg := &config.Config{
