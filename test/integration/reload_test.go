@@ -5,7 +5,6 @@ package integration
 import (
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -16,17 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-// stripScheme removes the http:// or https:// prefix from a URL
-func stripScheme(url string) string {
-	if after, ok := strings.CutPrefix(url, "http://"); ok {
-		return after
-	}
-	if after, ok := strings.CutPrefix(url, "https://"); ok {
-		return after
-	}
-	return url
-}
 
 // waitForServicesReady waits for services to be ready with a timeout
 func waitForServicesReady(t *testing.T) {
@@ -61,7 +49,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		t.Cleanup(func() { backend2.Close() })
 
 		// Start with one service
-		cfg := helpers.CreateTestConfig(t, "svc1", stripScheme(backend1.URL))
+		cfg := helpers.CreateTestConfig(t, "svc1", backend1.Listener.Addr().String())
 
 		// Create app with mock tailscale server
 		tsServer := testutil.CreateMockTailscaleServer(t, cfg.Tailscale)
@@ -80,8 +68,8 @@ func TestDynamicServiceManagement(t *testing.T) {
 
 		// Create new config with additional service
 		newCfg := helpers.CreateMultiServiceConfig(t, map[string]string{
-			"svc1": stripScheme(backend1.URL),
-			"svc2": stripScheme(backend2.URL),
+			"svc1": backend1.Listener.Addr().String(),
+			"svc2": backend2.Listener.Addr().String(),
 		})
 
 		// Reload configuration
@@ -103,8 +91,8 @@ func TestDynamicServiceManagement(t *testing.T) {
 
 		// Start with two services
 		cfg := helpers.CreateMultiServiceConfig(t, map[string]string{
-			"svc1": stripScheme(backend1.URL),
-			"svc2": stripScheme(backend2.URL),
+			"svc1": backend1.Listener.Addr().String(),
+			"svc2": backend2.Listener.Addr().String(),
 		})
 
 		// Create app with mock tailscale server
@@ -123,7 +111,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		waitForServicesReady(t)
 
 		// Create new config with only one service
-		newCfg := helpers.CreateTestConfig(t, "svc1", stripScheme(backend1.URL))
+		newCfg := helpers.CreateTestConfig(t, "svc1", backend1.Listener.Addr().String())
 
 		// Reload configuration
 		err = testApp.ReloadConfig(newCfg)
@@ -139,7 +127,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		backend2 := helpers.CreateTestBackend(t)
 
 		// Start with one service pointing to backend1
-		cfg := helpers.CreateTestConfig(t, "svc1", stripScheme(backend1.URL))
+		cfg := helpers.CreateTestConfig(t, "svc1", backend1.Listener.Addr().String())
 		cfg.Services[0].UpstreamHeaders = map[string]string{
 			"X-Custom": "value1",
 		}
@@ -160,7 +148,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		waitForServicesReady(t)
 
 		// Update service to point to backend2
-		newCfg := helpers.CreateTestConfig(t, "svc1", stripScheme(backend2.URL))
+		newCfg := helpers.CreateTestConfig(t, "svc1", backend2.Listener.Addr().String())
 		newCfg.Services[0].UpstreamHeaders = map[string]string{
 			"X-Custom": "value2",
 		}
@@ -178,7 +166,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		backend1 := helpers.CreateTestBackend(t)
 
 		// Start with one service
-		cfg := helpers.CreateTestConfig(t, "svc1", stripScheme(backend1.URL))
+		cfg := helpers.CreateTestConfig(t, "svc1", backend1.Listener.Addr().String())
 
 		// Create app with mock tailscale server
 		tsServer := testutil.CreateMockTailscaleServer(t, cfg.Tailscale)
@@ -198,7 +186,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		// Create new config with a service that has an invalid backend
 		// to simulate a partial failure
 		newCfg := helpers.CreateMultiServiceConfig(t, map[string]string{
-			"svc1": stripScheme(backend1.URL),
+			"svc1": backend1.Listener.Addr().String(),
 			"svc2": "localhost:9999", // Unreachable backend
 		})
 
@@ -213,7 +201,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		backend1 := helpers.CreateTestBackend(t)
 
 		// Start with one service
-		cfg := helpers.CreateTestConfig(t, "svc1", stripScheme(backend1.URL))
+		cfg := helpers.CreateTestConfig(t, "svc1", backend1.Listener.Addr().String())
 
 		// Create app with mock tailscale server
 		tsServer := testutil.CreateMockTailscaleServer(t, cfg.Tailscale)
@@ -234,7 +222,7 @@ func TestDynamicServiceManagement(t *testing.T) {
 		configs := make([]*config.Config, 5)
 		for i := range 5 {
 			backend := helpers.CreateTestBackend(t)
-			configs[i] = helpers.CreateTestConfig(t, "svc1", stripScheme(backend.URL))
+			configs[i] = helpers.CreateTestConfig(t, "svc1", backend.Listener.Addr().String())
 			configs[i].Services[0].Tags = []string{string(rune('a' + i))} // Different tags to force updates
 		}
 

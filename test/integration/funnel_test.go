@@ -5,7 +5,6 @@ package integration_test
 import (
 	"context"
 	"net"
-	"strings"
 	"testing"
 	"time"
 
@@ -46,17 +45,6 @@ func (m *mockAddr) Network() string {
 
 func (m *mockAddr) String() string {
 	return m.addr
-}
-
-// stripScheme removes the http:// or https:// prefix from a URL
-func stripScheme(url string) string {
-	if after, ok := strings.CutPrefix(url, "http://"); ok {
-		return after
-	}
-	if after, ok := strings.CutPrefix(url, "https://"); ok {
-		return after
-	}
-	return url
 }
 
 func TestFunnelIntegration(t *testing.T) {
@@ -103,7 +91,7 @@ func TestFunnelIntegration(t *testing.T) {
 			Services: []config.Service{
 				{
 					Name:          "funnel-service",
-					BackendAddr:   stripScheme(backend.URL),
+					BackendAddr:   backend.Listener.Addr().String(),
 					FunnelEnabled: &funnelTrue,
 					TLSMode:       "auto", // Should be ignored when funnel is enabled
 				},
@@ -175,7 +163,7 @@ func TestFunnelIntegration(t *testing.T) {
 			Services: []config.Service{
 				{
 					Name:          "normal-service",
-					BackendAddr:   stripScheme(backend.URL),
+					BackendAddr:   backend.Listener.Addr().String(),
 					FunnelEnabled: nil, // Not specified
 					TLSMode:       "auto",
 				},
@@ -242,7 +230,7 @@ func TestFunnelIntegration(t *testing.T) {
 			Services: []config.Service{
 				{
 					Name:          "no-funnel-service",
-					BackendAddr:   stripScheme(backend.URL),
+					BackendAddr:   backend.Listener.Addr().String(),
 					FunnelEnabled: &funnelFalse,
 					TLSMode:       "off", // Should use plain Listen
 				},
