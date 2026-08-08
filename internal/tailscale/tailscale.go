@@ -289,10 +289,15 @@ func (s *Server) createTLSListener(serviceServer tsnetpkg.TSNetServer, serviceNa
 		ctx, cancel := context.WithTimeout(context.Background(), certificatePrimingTimeout)
 		defer cancel()
 		start := time.Now()
-		if err := s.primeCertificate(ctx, serviceServer, serviceName); err != nil {
-			slog.Warn("certificate priming failed", "service", serviceName, "error", err, "duration", time.Since(start))
-		} else {
+		switch err := s.primeCertificate(ctx, serviceServer, serviceName); {
+		case err == nil:
 			slog.Debug("certificate primed successfully", "service", serviceName, "duration", time.Since(start))
+		case !s.isRegistered(serviceName, serviceServer):
+			// The service was removed or replaced while priming was in flight,
+			// so the tsnet server it was talking to is already closed.
+			slog.Debug("certificate priming abandoned", "service", serviceName, "error", err, "duration", time.Since(start))
+		default:
+			slog.Warn("certificate priming failed", "service", serviceName, "error", err, "duration", time.Since(start))
 		}
 	}()
 
@@ -332,6 +337,15 @@ func (s *Server) determineListenAddr(svc config.Service, tlsMode string) string 
 		return ":80"
 	}
 	return ":443"
+}
+
+// isRegistered reports whether server is still the TSNetServer registered under
+// serviceName. It is false once the service has been closed or replaced, which
+// means the server has been shut down too.
+func (s *Server) isRegistered(serviceName string, server tsnetpkg.TSNetServer) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.serviceServers[serviceName] == server
 }
 
 // GetServiceServer returns the TSNetServer for a specific service

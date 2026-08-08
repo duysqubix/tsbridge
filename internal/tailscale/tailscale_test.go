@@ -1745,6 +1745,31 @@ func TestCloseService(t *testing.T) {
 	}
 }
 
+func TestIsRegistered(t *testing.T) {
+	factory := func(serviceName string) tsnet.TSNetServer {
+		return tsnet.NewMockTSNetServer()
+	}
+	server, err := NewServerWithFactory(config.Tailscale{AuthKey: config.RedactedString("test-key")}, factory)
+	require.NoError(t, err)
+
+	original := tsnet.NewMockTSNetServer()
+	original.CloseFunc = func() error { return nil }
+	server.serviceServers["test-service"] = original
+
+	assert.True(t, server.isRegistered("test-service", original))
+	assert.False(t, server.isRegistered("other-service", original))
+
+	// A re-add under the same name leaves the original stale
+	replacement := tsnet.NewMockTSNetServer()
+	server.serviceServers["test-service"] = replacement
+	assert.False(t, server.isRegistered("test-service", original))
+	assert.True(t, server.isRegistered("test-service", replacement))
+
+	// Closing the service deregisters it
+	require.NoError(t, server.CloseService("test-service"))
+	assert.False(t, server.isRegistered("test-service", replacement))
+}
+
 func TestDetermineListenAddr(t *testing.T) {
 	tests := []struct {
 		name         string
