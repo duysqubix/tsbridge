@@ -5,6 +5,17 @@ All notable changes to tsbridge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.1] - 2026-08-21
+
+### Dependencies
+
+- Bump tailscale.com from 1.96.5 to 1.102.3
+- Bump github.com/prometheus/client_golang from 1.23.2 to 1.24.1
+- Bump github.com/knadh/koanf/v2 from 2.3.4 to 2.3.6
+- Bump github.com/stretchr/testify from 1.11.1 to 1.12.1
+- Update Go toolchain to 1.26.6
+- Update indirect Go module dependencies (drops AWS SDK v2, prometheus-community/pro-bing)
+
 ## [0.15.0] - 2026-04-18
 
 ### Added
@@ -589,6 +600,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of tsbridge - a lightweight proxy manager built on Tailscale's tsnet library
 
+[0.15.1]: https://github.com/jtdowney/tsbridge/releases/tag/v0.15.1
 [0.15.0]: https://github.com/jtdowney/tsbridge/releases/tag/v0.15.0
 [0.14.0]: https://github.com/jtdowney/tsbridge/releases/tag/v0.14.0
 [0.13.1]: https://github.com/jtdowney/tsbridge/releases/tag/v0.13.1
