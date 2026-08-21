@@ -16,7 +16,6 @@ import (
 	"github.com/docker/docker/api/types/events"
 	"github.com/jtdowney/tsbridge/internal/config"
 	"github.com/jtdowney/tsbridge/internal/errors"
-	"github.com/jtdowney/tsbridge/internal/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -382,7 +381,7 @@ func TestConfigEqual(t *testing.T) {
 					{
 						Name:         "api",
 						BackendAddr:  "http://localhost:8080",
-						WhoisTimeout: testhelpers.DurationPtr(2 * time.Second),
+						WhoisTimeout: new(2 * time.Second),
 					},
 				},
 			},
@@ -391,7 +390,7 @@ func TestConfigEqual(t *testing.T) {
 					{
 						Name:         "api",
 						BackendAddr:  "http://localhost:8080",
-						WhoisTimeout: testhelpers.DurationPtr(5 * time.Second),
+						WhoisTimeout: new(5 * time.Second),
 					},
 				},
 			},

@@ -7,7 +7,6 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,17 +21,17 @@ func TestParseDuration(t *testing.T) {
 		{
 			name:     "valid duration",
 			value:    "30s",
-			expected: testhelpers.DurationPtr(30 * time.Second),
+			expected: new(30 * time.Second),
 		},
 		{
 			name:     "valid duration with ms",
 			value:    "500ms",
-			expected: testhelpers.DurationPtr(500 * time.Millisecond),
+			expected: new(500 * time.Millisecond),
 		},
 		{
 			name:     "zero duration",
 			value:    "0s",
-			expected: testhelpers.DurationPtr(0),
+			expected: new(time.Duration(0)),
 		},
 		{
 			name:     "empty string",

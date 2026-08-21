@@ -18,7 +18,6 @@ import (
 	"github.com/jtdowney/tsbridge/internal/middleware"
 	"github.com/jtdowney/tsbridge/internal/proxy"
 	"github.com/jtdowney/tsbridge/internal/tailscale"
-	"github.com/jtdowney/tsbridge/internal/testhelpers"
 	"github.com/jtdowney/tsbridge/internal/tsnet"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
@@ -103,7 +102,7 @@ func TestRegistry_StartServices(t *testing.T) {
 	// Create config with services
 	cfg := &config.Config{
 		Global: config.Global{
-			ShutdownTimeout: testhelpers.DurationPtr(5 * time.Second),
+			ShutdownTimeout: new(5 * time.Second),
 		},
 		Services: []config.Service{
 			{
@@ -195,10 +194,10 @@ func TestRegistry_StartServices_WithBackendHealthCheck(t *testing.T) {
 					AuthKey: "test-auth-key",
 				},
 				Global: config.Global{
-					ReadHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-					WriteTimeout:      testhelpers.DurationPtr(30 * time.Second),
-					IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:   testhelpers.DurationPtr(10 * time.Second),
+					ReadHeaderTimeout: new(30 * time.Second),
+					WriteTimeout:      new(30 * time.Second),
+					IdleTimeout:       new(120 * time.Second),
+					ShutdownTimeout:   new(10 * time.Second),
 				},
 				Services: tt.services,
 			}
@@ -633,10 +632,10 @@ func TestRegistry_Shutdown(t *testing.T) {
 			AuthKey: "test-auth-key",
 		},
 		Global: config.Global{
-			ReadHeaderTimeout: testhelpers.DurationPtr(30 * 1000000000), // 30s
-			WriteTimeout:      testhelpers.DurationPtr(30 * 1000000000),
-			IdleTimeout:       testhelpers.DurationPtr(120 * 1000000000),
-			ShutdownTimeout:   testhelpers.DurationPtr(10 * 1000000000),
+			ReadHeaderTimeout: new(time.Duration(30 * 1000000000)), // 30s
+			WriteTimeout:      new(time.Duration(30 * 1000000000)),
+			IdleTimeout:       new(time.Duration(120 * 1000000000)),
+			ShutdownTimeout:   new(time.Duration(10 * 1000000000)),
 		},
 		Services: []config.Service{
 			{
@@ -830,7 +829,7 @@ func TestConcurrentShutdown(t *testing.T) {
 	// Create test config
 	cfg := &config.Config{
 		Global: config.Global{
-			ShutdownTimeout: testhelpers.DurationPtr(2 * time.Second),
+			ShutdownTimeout: new(2 * time.Second),
 		},
 	}
 
@@ -895,7 +894,7 @@ func TestShutdownErrorHandling(t *testing.T) {
 	registry := &Registry{
 		config: &config.Config{
 			Global: config.Global{
-				ShutdownTimeout: testhelpers.DurationPtr(100 * time.Millisecond),
+				ShutdownTimeout: new(100 * time.Millisecond),
 			},
 		},
 		services: make(map[string]*Service),
@@ -962,10 +961,10 @@ func TestServiceWithRealProxy(t *testing.T) {
 	// Create config
 	cfg := &config.Config{
 		Global: config.Global{
-			ReadHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-			WriteTimeout:      testhelpers.DurationPtr(30 * time.Second),
-			IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-			ShutdownTimeout:   testhelpers.DurationPtr(10 * time.Second),
+			ReadHeaderTimeout: new(30 * time.Second),
+			WriteTimeout:      new(30 * time.Second),
+			IdleTimeout:       new(120 * time.Second),
+			ShutdownTimeout:   new(10 * time.Second),
 		},
 		Services: []config.Service{
 			{
@@ -1058,7 +1057,7 @@ func TestShutdownIdempotency(t *testing.T) {
 	registry := &Registry{
 		config: &config.Config{
 			Global: config.Global{
-				ShutdownTimeout: testhelpers.DurationPtr(1 * time.Second),
+				ShutdownTimeout: new(1 * time.Second),
 			},
 		},
 		services: make(map[string]*Service),
@@ -1158,7 +1157,7 @@ func TestRegistry_StartServices_SetsServiceName(t *testing.T) {
 	// Create config with services
 	cfg := &config.Config{
 		Global: config.Global{
-			ShutdownTimeout: testhelpers.DurationPtr(5 * time.Second),
+			ShutdownTimeout: new(5 * time.Second),
 		},
 		Services: []config.Service{
 			{
@@ -1225,7 +1224,7 @@ func TestRegistry_ServicesAsMap(t *testing.T) {
 	// Create config with services
 	cfg := &config.Config{
 		Global: config.Global{
-			ShutdownTimeout: testhelpers.DurationPtr(5 * time.Second),
+			ShutdownTimeout: new(5 * time.Second),
 		},
 		Services: []config.Service{
 			{
@@ -1296,7 +1295,7 @@ func TestRegistry_GetService(t *testing.T) {
 	// Create config with services
 	cfg := &config.Config{
 		Global: config.Global{
-			ShutdownTimeout: testhelpers.DurationPtr(5 * time.Second),
+			ShutdownTimeout: new(5 * time.Second),
 		},
 		Services: []config.Service{
 			{
@@ -1405,7 +1404,7 @@ func TestRegistry_AddService(t *testing.T) {
 			// Create config with existing services
 			cfg := &config.Config{
 				Global: config.Global{
-					ShutdownTimeout: testhelpers.DurationPtr(5 * time.Second),
+					ShutdownTimeout: new(5 * time.Second),
 				},
 				Services: tt.existingServices,
 				Tailscale: config.Tailscale{
@@ -1455,7 +1454,7 @@ func TestRegistry_AddService(t *testing.T) {
 func TestRegistry_AddService_Concurrent(t *testing.T) {
 	cfg := &config.Config{
 		Global: config.Global{
-			ShutdownTimeout: testhelpers.DurationPtr(5 * time.Second),
+			ShutdownTimeout: new(5 * time.Second),
 		},
 		Tailscale: config.Tailscale{
 			AuthKey: "test-key",
@@ -1556,7 +1555,7 @@ func TestRegistry_RemoveService(t *testing.T) {
 			// Create config
 			cfg := &config.Config{
 				Global: config.Global{
-					ShutdownTimeout: testhelpers.DurationPtr(5 * time.Second),
+					ShutdownTimeout: new(5 * time.Second),
 				},
 				Services: tt.initialServices,
 				Tailscale: config.Tailscale{
@@ -1616,7 +1615,7 @@ func TestRegistry_RemoveService_VerifyStop(t *testing.T) {
 
 	cfg := &config.Config{
 		Global: config.Global{
-			ShutdownTimeout: testhelpers.DurationPtr(5 * time.Second),
+			ShutdownTimeout: new(5 * time.Second),
 		},
 		Services: []config.Service{
 			{Name: "test-service", BackendAddr: "localhost:8001", TLSMode: "off"},
@@ -1800,7 +1799,7 @@ func TestRegistry_UpdateService(t *testing.T) {
 			// Create config
 			cfg := &config.Config{
 				Global: config.Global{
-					ShutdownTimeout: testhelpers.DurationPtr(5 * time.Second),
+					ShutdownTimeout: new(5 * time.Second),
 				},
 				Services: []config.Service{tt.initialService},
 				Tailscale: config.Tailscale{
@@ -1859,7 +1858,7 @@ func TestRegistry_UpdateService_ValidationFailureKeepsOldService(t *testing.T) {
 
 	cfg := &config.Config{
 		Global: config.Global{
-			ShutdownTimeout: testhelpers.DurationPtr(5 * time.Second),
+			ShutdownTimeout: new(5 * time.Second),
 		},
 		Services: []config.Service{initialService},
 		Tailscale: config.Tailscale{
@@ -1905,7 +1904,7 @@ func TestRegistry_UpdateService_ValidationFailureKeepsOldService(t *testing.T) {
 func TestRegistry_UpdateService_Concurrent(t *testing.T) {
 	cfg := &config.Config{
 		Global: config.Global{
-			ShutdownTimeout: testhelpers.DurationPtr(5 * time.Second),
+			ShutdownTimeout: new(5 * time.Second),
 		},
 		Services: []config.Service{
 			{Name: "service-1", BackendAddr: "localhost:8001", TLSMode: "off"},

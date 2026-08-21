@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jtdowney/tsbridge/internal/errors"
-	"github.com/jtdowney/tsbridge/internal/testhelpers"
 )
 
 // TestFixture represents a reusable test configuration
@@ -97,11 +96,11 @@ tags = ["tag:test"]
 					OAuthClientSecret: "prod-client-secret",
 				},
 				Global: Global{
-					ReadHeaderTimeout:     testhelpers.DurationPtr(30 * time.Second),
-					WriteTimeout:          testhelpers.DurationPtr(30 * time.Second),
-					IdleTimeout:           testhelpers.DurationPtr(120 * time.Second),
-					ShutdownTimeout:       testhelpers.DurationPtr(30 * time.Second),
-					ResponseHeaderTimeout: testhelpers.DurationPtr(10 * time.Second),
+					ReadHeaderTimeout:     new(30 * time.Second),
+					WriteTimeout:          new(30 * time.Second),
+					IdleTimeout:           new(120 * time.Second),
+					ShutdownTimeout:       new(30 * time.Second),
+					ResponseHeaderTimeout: new(10 * time.Second),
 					MetricsAddr:           ":9090",
 					AccessLog:             new(true),
 					TrustedProxies:        []string{"10.0.0.0/8", "172.16.0.0/12"},
@@ -111,10 +110,10 @@ tags = ["tag:test"]
 						Name:              "api",
 						BackendAddr:       "localhost:8080",
 						WhoisEnabled:      new(true),
-						WhoisTimeout:      testhelpers.DurationPtr(5 * time.Second),
+						WhoisTimeout:      new(5 * time.Second),
 						TLSMode:           "off",
-						ReadHeaderTimeout: testhelpers.DurationPtr(60 * time.Second),
-						WriteTimeout:      testhelpers.DurationPtr(60 * time.Second),
+						ReadHeaderTimeout: new(60 * time.Second),
+						WriteTimeout:      new(60 * time.Second),
 						AccessLog:         new(false),
 						FunnelEnabled:     new(true),
 						Ephemeral:         false,

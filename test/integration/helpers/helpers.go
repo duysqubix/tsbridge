@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/testhelpers"
 	"github.com/stretchr/testify/require"
 )
 
@@ -101,10 +100,10 @@ func CreateTestConfig(t *testing.T, serviceName string, backendAddr string) *con
 		},
 		Global: config.Global{
 			MetricsAddr:       "localhost:0",
-			ReadHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-			WriteTimeout:      testhelpers.DurationPtr(30 * time.Second),
-			IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-			ShutdownTimeout:   testhelpers.DurationPtr(10 * time.Second),
+			ReadHeaderTimeout: new(30 * time.Second),
+			WriteTimeout:      new(30 * time.Second),
+			IdleTimeout:       new(120 * time.Second),
+			ShutdownTimeout:   new(10 * time.Second),
 		},
 		Services: []config.Service{
 			{
@@ -129,10 +128,10 @@ func CreateMultiServiceConfig(t *testing.T, services map[string]string) *config.
 		},
 		Global: config.Global{
 			MetricsAddr:       "localhost:0",
-			ReadHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-			WriteTimeout:      testhelpers.DurationPtr(30 * time.Second),
-			IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-			ShutdownTimeout:   testhelpers.DurationPtr(10 * time.Second),
+			ReadHeaderTimeout: new(30 * time.Second),
+			WriteTimeout:      new(30 * time.Second),
+			IdleTimeout:       new(120 * time.Second),
+			ShutdownTimeout:   new(10 * time.Second),
 		},
 	}
 

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/jtdowney/tsbridge/internal/config"
-	"github.com/jtdowney/tsbridge/internal/testhelpers"
 )
 
 // TestFixture provides a standard configuration builder for tests
@@ -29,10 +28,10 @@ func NewTestFixture(t *testing.T) *TestFixture {
 			},
 			Global: config.Global{
 				MetricsAddr:       "localhost:0",
-				ReadHeaderTimeout: testhelpers.DurationPtr(30 * time.Second),
-				WriteTimeout:      testhelpers.DurationPtr(30 * time.Second),
-				IdleTimeout:       testhelpers.DurationPtr(120 * time.Second),
-				ShutdownTimeout:   testhelpers.DurationPtr(10 * time.Second),
+				ReadHeaderTimeout: new(30 * time.Second),
+				WriteTimeout:      new(30 * time.Second),
+				IdleTimeout:       new(120 * time.Second),
+				ShutdownTimeout:   new(10 * time.Second),
 			},
 			Services: []config.Service{
 				{
